@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Аркада — Учёт призов</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --card2: #f9f9f9;
+  --border: #e0e0e0;
+  --text: #1a1a1a;
+  --text2: #666666;
+  --dim: #999999;
+  --gold: #c47a00;
+  --gold-bg: #fff8e8;
+  --red: #c0392b;
+  --red-bg: #fdf0ee;
+  --green: #1a7a3a;
+  --green-bg: #edf7f1;
+  --blue: #1a5a9a;
+  --blue-bg: #eef4fc;
+  --purple: #6a1a8a;
+  --purple-bg: #f6eefa;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.12);
+  --radius: 10px;
+  --font-size: 16px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  font-size: var(--font-size);
+  min-height: 100vh;
+}
+
+/* ── LOADER ── */
+#loader {
+  position: fixed; inset: 0; background: #fff;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 999;
+}
+.loader-title { font-size: 1.8rem; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+.spinner { width: 36px; height: 36px; border: 3px solid #eee; border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+.loader-text { font-size: 14px; color: var(--dim); margin-top: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── LOGIN ── */
+#login-screen {
+  min-height: 100vh; display: none; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px; background: var(--bg);
+}
+.login-logo { font-size: 2.5rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; text-align: center; }
+.login-sub { font-size: 14px; color: var(--dim); margin-bottom: 28px; text-align: center; }
+.login-box { width: 100%; max-width: 360px; background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow2); }
+.login-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+.conn-badge { font-size: 13px; text-align: center; padding: 8px; border-radius: 8px; margin-bottom: 14px; font-weight: 600; }
+.conn-ok { background: var(--green-bg); color: var(--green); }
+.conn-err { background: var(--red-bg); color: var(--red); }
+.f-label { font-size: 13px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 6px; }
+.f-input, .f-select {
+  width: 100%; padding: 12px 14px; margin-bottom: 14px;
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 16px; outline: none;
+}
+.f-input:focus, .f-select:focus { border-color: var(--gold); }
+.login-btn {
+  width: 100%; padding: 14px; background: var(--gold); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.login-btn:active { opacity: .85; }
+.login-err { color: var(--red); font-size: 13px; text-align: center; margin-top: 8px; min-height: 18px; }
+
+/* ── APP HEADER ── */
+.app-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow);
+}
+.hdr-left { display: flex; flex-direction: column; }
+.hdr-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
+.hdr-sub { font-size: 12px; color: var(--dim); }
+.hdr-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; display: inline-block; margin-top: 2px;
+}
+.badge-op { background: var(--red-bg); color: var(--red); }
+.badge-ow { background: var(--green-bg); color: var(--green); }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.hdr-time { font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.sync-dot.off { background: var(--red); }
+.logout-btn {
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+.logout-btn:active { background: var(--red-bg); color: var(--red); }
+
+/* ── SHIFT BANNER ── */
+.shift-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.shift-open { background: var(--green-bg); color: var(--green); }
+.shift-closed { background: var(--red-bg); color: var(--red); }
+.shift-action {
+  font-size: 13px; font-weight: 700; padding: 6px 14px;
+  border-radius: 8px; cursor: pointer; border: 1.5px solid;
+}
+.shift-action.open { border-color: var(--green); color: var(--green); background: #fff; }
+.shift-action.close { border-color: var(--red); color: var(--red); background: #fff; }
+
+/* ── LOCATION SWITCHER (Шарики/Уточки) ── */
+.loc-switcher {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.loc-sw-btn {
+  flex: 1; padding: 12px; text-align: center; font-size: 15px;
+  font-weight: 600; cursor: pointer; color: var(--dim);
+  border: none; background: none; border-bottom: 3px solid transparent;
+}
+.loc-sw-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  display: flex; background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.stat-item { flex: 1; text-align: center; padding: 10px 4px; border-right: 1px solid var(--border); }
+.stat-item:last-child { border-right: none; }
+.stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--dim); margin-top: 2px; font-weight: 600; }
+.stat-item.s-toy .stat-val { color: var(--red); }
+.stat-item.s-key .stat-val { color: var(--blue); }
+.stat-item.s-big .stat-val { color: var(--purple); }
+.stat-item.s-own .stat-val { color: var(--dim); }
+.stat-item.s-tech .stat-val { color: var(--dim); }
+.stat-item.s-pay .stat-val { color: var(--gold); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; background: var(--card);
+  border-bottom: 1px solid var(--border); overflow-x: auto;
+}
+.tab-btn {
+  flex-shrink: 0; padding: 12px 14px; font-size: 14px; font-weight: 600;
+  color: var(--dim); border: none; background: none; cursor: pointer;
+  border-bottom: 3px solid transparent; white-space: nowrap;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: var(--gold-bg); }
+
+.panel { display: none; padding: 16px; padding-bottom: 100px; }
+.panel.active { display: block; }
+
+/* ── SECTION TITLE ── */
+.sec-title {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--border);
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card h4 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--gold); }
+
+/* ── PRIZE BUTTONS ── */
+.prize-btn {
+  width: 100%; padding: 18px 16px; border-radius: var(--radius);
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; border: 2px solid; margin-bottom: 10px;
+  transition: transform .1s; text-align: left;
+}
+.prize-btn:active:not([disabled]) { transform: scale(.98); opacity: .85; }
+.prize-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.prize-btn .btn-emoji { font-size: 2rem; flex-shrink: 0; }
+.prize-btn .btn-text { flex: 1; }
+.prize-btn .btn-title { font-size: 17px; font-weight: 700; }
+.prize-btn .btn-sub { font-size: 13px; margin-top: 2px; }
+
+.btn-toy { background: var(--red-bg); border-color: var(--red); }
+.btn-toy .btn-title { color: var(--red); }
+.btn-toy .btn-sub { color: #a03020; }
+
+.btn-key { background: var(--blue-bg); border-color: var(--blue); }
+.btn-key .btn-title { color: var(--blue); }
+.btn-key .btn-sub { color: #1a4a80; }
+
+.btn-big { background: var(--purple-bg); border-color: var(--purple); }
+.btn-big .btn-title { color: var(--purple); }
+.btn-big .btn-sub { color: #5a1a7a; }
+
+.btn-duck { background: var(--green-bg); border-color: var(--green); }
+.btn-duck .btn-title { color: var(--green); }
+.btn-duck .btn-sub { color: #1a6030; }
+
+.btn-own { background: var(--card2); border-color: var(--border); }
+.btn-own .btn-title { color: var(--dim); }
+.btn-own .btn-sub { color: var(--dim); }
+
+.btn-tech { background: var(--card2); border-color: var(--border); }
+.btn-tech .btn-title { color: var(--dim); }
+
+/* ── SMALL BUTTON ── */
+.btn-sm {
+  padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-sm-ghost { background: var(--card2); border-color: var(--border); color: var(--text2); }
+.btn-sm-ghost:active { background: var(--border); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  transform: translateY(100%); transition: transform .25s ease;
+  background: var(--card); border-top: 2px solid var(--gold);
+  padding: 14px 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+#toast.show { transform: translateY(0); }
+.toast-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.toast-lbl { flex: 1; font-size: 15px; font-weight: 600; }
+.toast-timer { font-size: 1.3rem; font-weight: 700; color: var(--gold); min-width: 32px; text-align: right; }
+.toast-bar { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 12px; overflow: hidden; }
+.toast-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 1s linear; }
+.toast-btns { display: flex; gap: 10px; }
+.toast-confirm {
+  flex: 2; padding: 13px; background: var(--green); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.toast-cancel {
+  flex: 1; padding: 13px; background: var(--red); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+
+/* ── RECENT LOG ── */
+.recent-wrap {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 12px;
+}
+.recent-hdr {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  text-transform: uppercase; letter-spacing: .08em; background: var(--card2);
+}
+.recent-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.recent-item:last-child { border-bottom: none; }
+.ri-time { font-size: 13px; color: var(--dim); min-width: 60px; font-weight: 600; }
+.ri-type { font-size: 14px; font-weight: 600; flex: 1; }
+.ri-toy { color: var(--red); }
+.ri-key { color: var(--blue); }
+.ri-big { color: var(--purple); }
+.ri-own { color: var(--dim); font-style: italic; }
+.ri-tech { color: var(--dim); }
+.ri-cancel { color: var(--red); font-style: italic; }
+.ri-shift { color: var(--green); }
+.ri-empty { padding: 16px; text-align: center; color: var(--dim); font-size: 14px; }
+
+/* ── STOCK MINI ── */
+.stock-mini {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.stock-pill {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px; text-align: center; flex: 1; min-width: 70px;
+}
+.stock-pill .sp-val { font-size: 1.2rem; font-weight: 700; }
+.stock-pill .sp-lbl { font-size: 11px; color: var(--dim); font-weight: 600; }
+.sp-toy { color: var(--red); }
+.sp-key { color: var(--blue); }
+.sp-big { color: var(--purple); }
+.sp-ball { color: var(--gold); }
+
+/* ── COUNTERS ── */
+.ctr-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 8px;
+}
+.ctr-info { flex: 1; }
+.ctr-name { font-size: 15px; font-weight: 700; }
+.ctr-prev { font-size: 13px; color: var(--dim); margin-top: 2px; }
+.ctr-input {
+  width: 90px; padding: 10px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; outline: none;
+  color: var(--text);
+}
+.ctr-input:focus { border-color: var(--gold); }
+.ctr-diff { width: 50px; text-align: right; font-size: 1rem; font-weight: 700; }
+
+/* ── BALL INPUT (numpad) ── */
+.ball-result {
+  text-align: center; padding: 16px; background: var(--card2);
+  border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;
+}
+.ball-num { font-size: 4rem; font-weight: 700; color: var(--gold); line-height: 1; }
+.ball-lbl { font-size: 13px; color: var(--dim); margin-bottom: 6px; }
+.ball-prize { font-size: 1.2rem; font-weight: 700; margin-top: 8px; }
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.num-btn {
+  padding: 16px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 1.3rem; font-weight: 700; cursor: pointer;
+  text-align: center; transition: all .1s;
+}
+.num-btn:active { background: var(--gold-bg); border-color: var(--gold); }
+.num-btn.num-del { color: var(--red); }
+.num-btn.num-zero { grid-column: span 2; }
+
+/* ── TABLES ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  padding: 8px 8px; border-bottom: 2px solid var(--border);
+  text-align: left; text-transform: uppercase; letter-spacing: .05em;
+}
+.data-table td { font-size: 14px; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.data-table tr:hover td { background: var(--card2); }
+.td-time { color: var(--dim); font-size: 13px; white-space: nowrap; font-weight: 600; }
+.td-toy { color: var(--red); font-weight: 700; }
+.td-key { color: var(--blue); font-weight: 700; }
+.td-big { color: var(--purple); font-weight: 700; }
+.td-own { color: var(--dim); font-style: italic; }
+.td-cancel { color: var(--red); font-style: italic; }
+.td-shift { color: var(--green); font-weight: 700; }
+.td-pay { color: var(--gold); font-weight: 700; }
+.td-dim { color: var(--dim); font-size: 13px; }
+
+/* ── STOCK CARDS ── */
+.stock-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.sc-icon { font-size: 1.6rem; flex-shrink: 0; }
+.sc-info { flex: 1; }
+.sc-name { font-size: 15px; font-weight: 700; }
+.sc-cnt { font-size: 1.6rem; font-weight: 700; line-height: 1; margin-top: 2px; }
+.sc-warn { font-size: 12px; color: var(--red); font-weight: 600; margin-top: 2px; }
+.sc-toy { color: var(--red); }
+.sc-key { color: var(--blue); }
+.sc-big { color: var(--purple); }
+.sc-ball { color: var(--gold); }
+
+/* ── FORMS ── */
+.form-row { margin-bottom: 14px; }
+.form-row label { font-size: 13px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 6px; }
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%; padding: 12px 14px; background: var(--card2);
+  border: 1.5px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: 'Inter', sans-serif; font-size: 16px; outline: none;
+}
+.form-row input:focus, .form-row select:focus { border-color: var(--gold); }
+.form-row input[type=number] { text-align: center; font-weight: 700; font-size: 1.2rem; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width: 100%; padding: 14px; background: var(--gold); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px;
+}
+.btn-primary:active { opacity: .85; }
+.btn-danger {
+  width: 100%; padding: 11px; background: var(--card2); border: 1.5px solid #f0b0a8;
+  border-radius: 8px; color: var(--red); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+}
+.btn-export {
+  width: 100%; padding: 11px; background: var(--card2); border: 1.5px solid #9ad4b0;
+  border-radius: 8px; color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+}
+
+/* ── OWNER OVERVIEW TABLE ── */
+.overview-table { width: 100%; border-collapse: collapse; }
+.overview-table th {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  padding: 8px; border-bottom: 2px solid var(--border); text-align: left;
+}
+.overview-table td { font-size: 15px; padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; }
+.overview-table tr { cursor: pointer; }
+.overview-table tr:hover td { background: var(--gold-bg); }
+.ov-ok { color: var(--green); }
+.ov-warn { color: var(--red); }
+
+/* ── RECON ── */
+.recon-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.recon-row:last-child { border-bottom: none; }
+.rr-lbl { font-size: 14px; color: var(--dim); font-weight: 600; }
+.rr-val { font-size: 1.1rem; font-weight: 700; }
+.rv-gold { color: var(--gold); }
+.rv-toy { color: var(--red); }
+.rv-key { color: var(--blue); }
+.rv-big { color: var(--purple); }
+.rv-green { color: var(--green); }
+.rv-red { color: var(--red); }
+.rv-dim { color: var(--dim); }
+.recon-ok { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--green); font-weight: 700; margin-top: 10px; }
+.recon-warn { background: var(--red-bg); border: 1.5px solid #f0b0a8; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--red); font-weight: 700; margin-top: 10px; }
+
+/* ── OPERATORS ── */
+.op-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+}
+.op-name { font-size: 15px; font-weight: 700; }
+.op-meta { font-size: 13px; color: var(--dim); margin-top: 2px; }
+.op-del { font-size: 13px; color: var(--red); font-weight: 700; padding: 7px 14px; border: 1.5px solid #f0b0a8; border-radius: 8px; cursor: pointer; }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.kpi-box { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+.kpi-val { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.kpi-lbl { font-size: 11px; color: var(--dim); font-weight: 700; margin-top: 3px; text-transform: uppercase; }
+.kpi-gold .kpi-val { color: var(--gold); }
+.kpi-toy .kpi-val { color: var(--red); }
+.kpi-key .kpi-val { color: var(--blue); }
+.kpi-big .kpi-val { color: var(--purple); }
+.kpi-green .kpi-val { color: var(--green); }
+
+/* ── LOC TABS ── */
+.loc-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.loc-tab {
+  flex: 1; min-width: 60px; padding: 9px 8px; text-align: center;
+  background: var(--card2); border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; font-weight: 700; color: var(--dim); cursor: pointer;
+}
+.loc-tab.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+
+/* ── FILTER ROW ── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-sel {
+  flex: 1; padding: 10px 12px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); outline: none;
+}
+.filter-sel:focus { border-color: var(--gold); }
+
+/* ── WARN BOX ── */
+.warn-box { display: none; background: var(--red-bg); border: 1.5px solid #f0b0a8; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: var(--red); font-weight: 700; margin-bottom: 12px; }
+.warn-box.show { display: block; }
+
+/* ── INFO BOX ── */
+.info-box { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: var(--green); font-weight: 600; margin-bottom: 12px; }
+
+/* ── SHIFT MODAL ── */
+#shift-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#shift-modal.show { display: flex; }
+.shift-modal-box { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; box-shadow: var(--shadow2); }
+.shift-modal-box h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+.shift-modal-box p { font-size: 14px; color: var(--text2); margin-bottom: 14px; line-height: 1.6; }
+.sm-prev { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+.sm-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.sm-row:last-child { margin-bottom: 0; }
+.sm-btns { display: flex; gap: 10px; }
+.sm-confirm { flex: 2; padding: 13px; background: var(--green); border: none; border-radius: 8px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+.sm-cancel { flex: 1; padding: 13px; background: var(--card2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* ── OWN GAME MODAL ── */
+#own-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#own-modal.show { display: flex; }
+.own-modal-box { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; }
+.own-modal-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; }
+.own-reason-btns { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.own-reason-btn {
+  padding: 13px; background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left;
+}
+.own-reason-btn.selected { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+.own-reason-btn:active { opacity: .8; }
+
+/* ── INCOMING ALERT ── */
+.incoming-alert { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+.ia-title { font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+.ia-body { font-size: 13px; color: var(--text2); }
+.ia-confirm { margin-top: 10px; padding: 10px; background: var(--green); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn .2s ease; }
+
+@keyframes btnPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(192,57,43,.2); } 50% { box-shadow: 0 0 0 10px rgba(192,57,43,0); } }
+.btn-pulse { animation: btnPulse .35s ease; }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-title">🎯 АРКАДА</div>
+  <div class="spinner"></div>
+  <div class="loader-text">Подключение к облаку...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🎯 АРКАДА</div>
+  <div class="login-sub">Система учёта призов</div>
+  <div class="login-box">
+    <h3>Вход в систему</h3>
+    <div class="conn-badge conn-ok" id="conn-badge">✓ Подключено к облаку</div>
+    <label class="f-label">Кто входит</label>
+    <select class="f-select" id="user-sel"><option value="">— выберите —</option></select>
+    <label class="f-label">Пароль</label>
+    <input class="f-input" type="password" id="pw-inp" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Войти →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- SHIFT MODAL -->
+<div id="shift-modal">
+  <div class="shift-modal-box">
+    <h3>Открытие смены</h3>
+    <p>Проверьте остатки с прошлой смены и приход. Всё совпадает?</p>
+    <div class="sm-prev" id="sm-prev"></div>
+    <div class="sm-btns">
+      <button class="sm-confirm" onclick="confirmShiftOpen()">✓ Всё верно</button>
+      <button class="sm-cancel" onclick="shiftDiscrepancy()">✗ Расхождение</button>
+    </div>
+  </div>
+</div>
+
+<!-- OWN GAME MODAL -->
+<div id="own-modal">
+  <div class="own-modal-box">
+    <h3>🎮 Своя игра</h3>
+    <div class="own-reason-btns">
+      <button class="own-reason-btn" onclick="selectReason('Пристрелка / наладка')">🔧 Пристрелка / наладка</button>
+      <button class="own-reason-btn" onclick="selectReason('Друг / знакомый')">👤 Друг / знакомый</button>
+      <button class="own-reason-btn" onclick="selectReason('Сотрудник')">👷 Сотрудник</button>
+      <button class="own-reason-btn" onclick="selectReason('Другое')">📝 Другое</button>
+    </div>
+    <button class="sm-cancel" style="width:100%" onclick="closeOwnModal()">Отмена</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <div class="toast-top">
+    <span class="toast-lbl" id="toast-lbl"></span>
+    <span class="toast-timer" id="toast-timer">30</span>
+  </div>
+  <div class="toast-bar"><div class="toast-fill" id="toast-fill" style="width:100%"></div></div>
+  <div class="toast-btns">
+    <button class="toast-confirm" onclick="toastOk()">✓ Подтвердить</button>
+    <button class="toast-cancel" onclick="toastNo()">✕ Отменить</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="app-hdr">
+    <div class="hdr-left">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="hdr-title">🎯 АРКАДА</span>
+        <div class="sync-dot" id="sync-dot"></div>
+      </div>
+      <div class="hdr-sub" id="hdr-sub"></div>
+      <span class="hdr-badge" id="hdr-badge"></span>
+    </div>
+    <div class="hdr-right">
+      <span class="hdr-time" id="hdr-time"></span>
+      <button class="logout-btn" onclick="doLogout()">Выход</button>
+    </div>
+  </div>
+
+  <div id="shift-banner-wrap"></div>
+  <div id="loc-switcher-wrap"></div>
+  <div id="stats-bar-wrap"></div>
+  <div class="tabs" id="tabs-wrap"></div>
+  <div id="panels-wrap"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, get, update, remove, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ══════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════
+const FB = {
+  apiKey: "AIzaSyA-EkSGmpaFRAXNWtQcjo1J8YQNcESno7I",
+  authDomain: "arcada-uchot.firebaseapp.com",
+  databaseURL: "https://arcada-uchot-default-rtdb.firebaseio.com",
+  projectId: "arcada-uchot",
+  storageBucket: "arcada-uchot.firebasestorage.app",
+  messagingSenderId: "252902676946",
+  appId: "1:252902676946:web:9018b0af777d557b27900b"
+};
+const app = initializeApp(FB);
+const db = getDatabase(app);
+const dbRef = path => ref(db, path);
+
+// ══════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════
+const LOCS = ['Тир 1', 'Тир 2', 'Шарики', 'Уточки'];
+const TIR = ['Тир 1', 'Тир 2'];
+const MACHINES = [1,2,3,4];
+const TOAST_SEC = 30;
+
+// Items allowed per location
+const LOC_ITEMS = {
+  'main':   ['toy_small','toy_big','key','balls_strike','balls_air'],
+  'Тир 1':  ['toy_small','key','balls_strike'],
+  'Тир 2':  ['toy_small','key','balls_strike'],
+  'Шарики': ['toy_small','toy_big','key','balls_air'],
+  'Уточки': ['toy_small'],
+};
+const ALL_ITEMS = [
+  {k:'toy_small',  l:'🧸 Игрушки маленькие (15–20 см)'},
+  {k:'toy_big',    l:'🎁 Игрушки большие (35–50 см)'},
+  {k:'key',        l:'🔑 Брелки'},
+  {k:'balls_strike',l:'🔵 Шары страйкбольные'},
+  {k:'balls_air',  l:'🎈 Шары надувные'},
+];
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let CU = null;           // current user
+let allUsers = {};
+let allData = {};        // all location data
+let locData = {};        // current operator's location data
+let ownerLoc = 'Тир 1'; // owner selected location
+let reconLoc = 'Тир 1';
+let stockLoc = 'Тир 1';
+let subLoc = 'Шарики';  // for Шарики+Уточки operator
+let clockTmr = null;
+let pendingEntry = null;
+let toastTmr = null, toastSec = TOAST_SEC;
+let ballCount = 0;
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const today = () => new Date().toLocaleDateString('ru-RU');
+const now = () => new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const enc = l => l.replace(/\//g,'-').replace(/\s/g,'_');
+const locPath = l => `locations/${enc(l||CU?.location)}`;
+const isTir = l => TIR.includes(l||CU?.location);
+const isBall = l => (l||CU?.location)==='Шарики';
+const isDuck = l => (l||CU?.location)==='Уточки';
+const isBallDuck = l => ['Шарики','Уточки'].includes(l||CU?.location);
+
+function todayLog(data) {
+  const t = today();
+  return Object.values(data?.log||{}).filter(l=>l.date===t);
+}
+function countType(data, ...types) {
+  return todayLog(data).filter(l=>types.includes(l.type)).length;
+}
+function paymentsToday(data) {
+  const p = data?.payments;
+  return p?.date===today() ? p.count : null;
+}
+function allPrizesToday(data) {
+  return countType(data,'toy','key_given','toy_small','toy_big','duck_prize','ball_prize');
+}
+function keysCalc(data) {
+  const p = paymentsToday(data);
+  if(p===null) return null;
+  const toys = countType(data,'toy','toy_small','toy_big','duck_prize');
+  return Math.max(0, p - toys);
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+function showLogin() {
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function init() {
+  // Always show login after 4 seconds max
+  setTimeout(showLogin, 4000);
+
+  onValue(dbRef('.info/connected'), snap => {
+    const ok = snap.val()===true;
+    const dot = document.getElementById('sync-dot');
+    if(dot) { dot.className='sync-dot'+(ok?'':' off'); }
+    const badge = document.getElementById('conn-badge');
+    if(badge) { badge.className='conn-badge '+(ok?'conn-ok':'conn-err'); badge.textContent=ok?'✓ Подключено к облаку':'✗ Нет соединения'; }
+    // Show login as soon as we know connection status
+    showLogin();
+  });
+
+  onValue(dbRef('users'), snap => {
+    allUsers = snap.val()||{};
+    buildUserSelect();
+  });
+
+  try {
+    const snap = await get(dbRef('users'));
+    if(!snap.exists()) {
+      await set(dbRef('users/owner'), {name:'Владелец',role:'owner',location:'all',pw:'0000'});
+    }
+  } catch(e) {
+    console.warn('Init error:', e);
+  }
+  showLogin();
+}
+
+function buildUserSelect() {
+  const sel = document.getElementById('user-sel'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— выберите —</option>';
+  Object.entries(allUsers).forEach(([k,u]) => {
+    const o = document.createElement('option');
+    o.value = k;
+    o.textContent = `${u.name} (${u.role==='owner'?'Владелец':u.location})`;
+    sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
+}
+
+// ══════════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+  const k = document.getElementById('user-sel').value;
+  const pw = document.getElementById('pw-inp').value.trim();
+  const err = document.getElementById('login-err');
+  if(!k){err.textContent='Выберите пользователя';return;}
+  const u = allUsers[k];
+  if(!u){err.textContent='Не найден';return;}
+  if(pw!==u.pw){err.textContent='Неверный пароль';document.getElementById('pw-inp').value='';return;}
+  CU = {...u, key:k};
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildApp();
+  startListening();
+  startClock();
+}
+window.doLogin = doLogin;
+
+function doLogout() {
+  clearInterval(clockTmr);
+  toastNo();
+  CU = null; locData = {};
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-inp').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+window.doLogout = doLogout;
+
+// ══════════════════════════════════════════════════════════
+// REAL-TIME LISTENER
+// ══════════════════════════════════════════════════════════
+function startListening() {
+  if(CU.role==='operator') {
+    const locs = CU.location==='Шарики+Уточки' ? ['Шарики','Уточки'] : [CU.location];
+    locs.forEach(l => {
+      onValue(dbRef(locPath(l)), snap => {
+        if(!allData[enc(l)]) allData[enc(l)] = {};
+        allData[enc(l)] = snap.val()||{};
+        if(l===CU.location||l===subLoc||(CU.location==='Шарики+Уточки'&&l==='Шарики')) {
+          locData = allData[enc(CU.location==='Шарики+Уточки'?subLoc:CU.location)]||{};
+        }
+        renderAll();
+      });
+    });
+  } else {
+    onValue(dbRef('locations'), snap => {
+      allData = snap.val()||{};
+      locData = allData[enc(ownerLoc)]||{};
+      renderAll();
+    });
+    onValue(dbRef('main_stock'), snap => {
+      renderMainStock(snap.val()||{});
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════════
+function startClock() {
+  const tick = () => { const el=document.getElementById('hdr-time'); if(el)el.textContent=now(); };
+  tick(); clockTmr = setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════════════════
+// SHIFT
+// ══════════════════════════════════════════════════════════
+function handleShift() {
+  const shift = locData?.shift;
+  if(shift?.open) {
+    if(!confirm('Закрыть смену?')) return;
+    addLog({type:'shift_close', note:'Смена закрыта'});
+    update(dbRef(`${locPath()}/shift`), {open:false});
+  } else {
+    showShiftModal();
+  }
+}
+window.handleShift = handleShift;
+
+function showShiftModal() {
+  const stock = locData?.stock||{};
+  const pending = locData?.pending_stock||{};
+  let rows = '';
+  const items = [
+    {key:'toy_small',lbl:'🧸 Игрушки маленькие'},
+    {key:'toy_big',lbl:'🎁 Игрушки большие'},
+    {key:'key',lbl:'🔑 Брелки'},
+    {key:'balls_strike',lbl:'🔵 Шары страйкб.'},
+    {key:'balls_air',lbl:'🎈 Шары надувные'},
+  ];
+  items.forEach(it => {
+    const val = stock[it.key];
+    const inc = pending[it.key]||0;
+    if(val!==undefined||inc>0) {
+      rows += `<div class="sm-row">
+        <span>${it.lbl}</span>
+        <span style="color:var(--text2)">${val!==undefined?val:'—'}${inc>0?` +${inc} приход`:''}</span>
+      </div>`;
+    }
+  });
+  if(!rows) rows = '<div style="color:var(--dim);font-size:14px">Нет данных</div>';
+  document.getElementById('sm-prev').innerHTML = rows;
+  document.getElementById('shift-modal').classList.add('show');
+}
+
+function confirmShiftOpen() {
+  addLog({type:'shift_open', note:'Смена открыта · остатки подтверждены'});
+  update(dbRef(`${locPath()}/shift`), {open:true, date:today(), time:now(), op:CU.name});
+  update(dbRef(`${locPath()}/pending_stock`), {});
+  document.getElementById('shift-modal').classList.remove('show');
+  renderAll();
+}
+window.confirmShiftOpen = confirmShiftOpen;
+
+function shiftDiscrepancy() {
+  const note = prompt('Опишите расхождение:');
+  if(note===null) return;
+  addLog({type:'shift_open', note:`Смена открыта · РАСХОЖДЕНИЕ: ${note}`});
+  update(dbRef(`${locPath()}/shift`), {open:true, date:today(), time:now(), op:CU.name, discrepancy:note});
+  update(dbRef(`${locPath()}/pending_stock`), {});
+  document.getElementById('shift-modal').classList.remove('show');
+  renderAll();
+}
+window.shiftDiscrepancy = shiftDiscrepancy;
+
+// ══════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════
+function showToast(entry, label) {
+  pendingEntry = entry;
+  toastSec = TOAST_SEC;
+  document.getElementById('toast-lbl').textContent = label;
+  document.getElementById('toast-timer').textContent = toastSec;
+  document.getElementById('toast-fill').style.width = '100%';
+  document.getElementById('toast').classList.add('show');
+  disablePrizeBtns(true);
+  clearInterval(toastTmr);
+  toastTmr = setInterval(() => {
+    toastSec--;
+    document.getElementById('toast-timer').textContent = toastSec;
+    document.getElementById('toast-fill').style.width = (toastSec/TOAST_SEC*100)+'%';
+    if(toastSec<=0) toastOk();
+  }, 1000);
+}
+
+function toastOk() {
+  clearInterval(toastTmr);
+  document.getElementById('toast').classList.remove('show');
+  disablePrizeBtns(false);
+  if(!pendingEntry) return;
+  commitEntry(pendingEntry);
+  pendingEntry = null;
+}
+window.toastOk = toastOk;
+
+function toastNo() {
+  clearInterval(toastTmr);
+  document.getElementById('toast').classList.remove('show');
+  disablePrizeBtns(false);
+  if(!pendingEntry) return;
+  let what = typeLabel(pendingEntry.type);
+  addLog({type:'cancel', note:`Отмена: ${what}`});
+  pendingEntry = null;
+}
+window.toastNo = toastNo;
+
+function disablePrizeBtns(val) {
+  ['btn-toy','btn-key','btn-big','btn-small','btn-duck','btn-ball-confirm'].forEach(id => {
+    const b = document.getElementById(id); if(b) b.disabled = val;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// LOG ENTRIES
+// ══════════════════════════════════════════════════════════
+function mkEntry(type, extra={}) {
+  return {type, date:today(), time:now(), ts:Date.now(), op:CU.name, loc:CU.location, ...extra};
+}
+
+function addLog(fields, customLoc) {
+  const lp = customLoc ? locPath(customLoc) : locPath();
+  push(dbRef(`${lp}/log`), {...mkEntry(fields.type), ...fields});
+}
+
+function commitEntry(entry) {
+  const lp = locPath(entry._loc||null);
+  push(dbRef(`${lp}/log`), entry);
+  // auto deduct stock
+  const stock = (allData[enc(entry._loc||CU.location)]||{}).stock||{};
+  const upd = {};
+  if(entry.type==='toy' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='key_given' && stock.key>0) upd.key = stock.key-1;
+  if(entry.type==='toy_small' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='toy_big' && stock.toy_big>0) upd.toy_big = stock.toy_big-1;
+  if(entry.type==='duck_prize' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='ball_prize') {
+    if(entry.prize==='toy_big' && stock.toy_big>0) upd.toy_big = stock.toy_big-1;
+    else if(entry.prize==='toy_small' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+    else if(entry.prize==='key' && stock.key>0) upd.key = stock.key-1;
+  }
+  if(Object.keys(upd).length) update(dbRef(`${lp}/stock`), upd);
+}
+
+function typeLabel(type) {
+  const map = {toy:'Игрушка (тир)',key_given:'Брелок',toy_small:'Маленькая игрушка',toy_big:'Большая игрушка',duck_prize:'Приз уточки',ball_prize:'Приз (шарики)',own_game:'Своя игра',no_prize:'Без приза',cancel:'Отмена',shift_open:'Открытие смены',shift_close:'Закрытие смены',counters:'Счётчики',payment:'Оплаты KitPos',stock_in:'Приход склад',stock_out:'Выдача на точку',inventory:'Инвентаризация'};
+  return map[type]||type;
+}
+
+// ══════════════════════════════════════════════════════════
+// PRIZE ACTIONS
+// ══════════════════════════════════════════════════════════
+function givePrize(type, extra={}) {
+  const labels = {toy:'🧸 Игрушка записана', key_given:'🔑 Брелок записан', toy_small:'🧸 Маленькая игрушка', toy_big:'🎁 Большая игрушка', duck_prize:'🧸 Приз уточки'};
+  const entry = mkEntry(type, extra);
+  showToast(entry, `${labels[type]||type} — подтвердите (${TOAST_SEC} сек)`);
+}
+window.givePrize = givePrize;
+
+// Own game modal
+function openOwnModal() { document.getElementById('own-modal').classList.add('show'); }
+window.openOwnModal = openOwnModal;
+function closeOwnModal() { document.getElementById('own-modal').classList.remove('show'); }
+window.closeOwnModal = closeOwnModal;
+function selectReason(reason) {
+  closeOwnModal();
+  addLog({type:'own_game', note:reason});
+  renderAll();
+}
+window.selectReason = selectReason;
+
+// No prize (Шарики rare case)
+function giveNoPrize() {
+  if(!confirm('Записать игру без приза?')) return;
+  addLog({type:'no_prize', note:'Без приза'});
+  renderAll();
+}
+window.giveNoPrize = giveNoPrize;
+
+// Ball numpad
+function numpad(n) {
+  if(n==='del') { ballCount = Math.floor(ballCount/10); }
+  else { if(ballCount>=10) return; ballCount = ballCount*10+n; if(ballCount>10) ballCount=10; }
+  renderBallInput();
+}
+window.numpad = numpad;
+
+function renderBallInput() {
+  const el = document.getElementById('ball-num'); if(!el) return;
+  el.textContent = ballCount;
+  const prizes = locData?.prizes||{toy_big:10,toy_small:9};
+  let prize='', prizeLabel='', prizeType='';
+  if(ballCount>=prizes.toy_big){ prize='🎁'; prizeLabel='БОЛЬШАЯ ИГРУШКА'; prizeType='toy_big'; }
+  else if(ballCount>=prizes.toy_small){ prize='🧸'; prizeLabel='МАЛЕНЬКАЯ ИГРУШКА'; prizeType='toy_small'; }
+  else if(ballCount>=1){ prize='🔑'; prizeLabel='БРЕЛОК'; prizeType='key'; }
+  else { prize='—'; prizeLabel='введите результат'; prizeType=''; }
+  const pl = document.getElementById('ball-prize');
+  if(pl) pl.textContent = ballCount>0 ? `${prize} ${prizeLabel}` : prizeLabel;
+  const btn = document.getElementById('btn-ball-confirm');
+  if(btn) { btn.dataset.prizetype = prizeType; btn.disabled = ballCount===0; }
+}
+
+function confirmBall() {
+  const btn = document.getElementById('btn-ball-confirm');
+  const pt = btn?.dataset.prizetype;
+  if(!pt) return;
+  const entry = mkEntry('ball_prize', {balls:ballCount, prize:pt});
+  const prizes = locData?.prizes||{toy_big:10,toy_small:9};
+  let label = '🔑 Брелок';
+  if(pt==='toy_big') label='🎁 Большая игрушка';
+  else if(pt==='toy_small') label='🧸 Маленькая игрушка';
+  showToast(entry, `${label} (${ballCount} шаров) — подтвердите`);
+  ballCount = 0;
+  renderBallInput();
+}
+window.confirmBall = confirmBall;
+
+// ══════════════════════════════════════════════════════════
+// COUNTERS
+// ══════════════════════════════════════════════════════════
+function saveCounters() {
+  const time = now();
+  const upd = {};
+  let saved = 0;
+  MACHINES.forEach(m => {
+    const v = parseInt(document.getElementById(`ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0) { upd[`counters/${m}`]={prev:v,prevDate:today(),prevTime:time}; saved++; }
+  });
+  if(!saved){alert('Введите показания хотя бы одного автомата');return;}
+  update(dbRef(locPath()), upd);
+  addLog({type:'counters', note:`Счётчики сохранены (${saved} авт.) в ${time}`});
+  MACHINES.forEach(m=>{const el=document.getElementById(`ctr-${m}`);if(el)el.value='';});
+  alert(`✓ Сохранено в ${time}`);
+}
+window.saveCounters = saveCounters;
+
+function updateDiff(m) {
+  const inp = document.getElementById(`ctr-${m}`);
+  const dif = document.getElementById(`ctr-diff-${m}`);
+  if(!inp||!dif) return;
+  const v = parseInt(inp.value);
+  const prev = locData?.counters?.[m]?.prev;
+  if(!isNaN(v)&&v>=0&&prev!==undefined) {
+    const d = v-prev;
+    dif.textContent = (d>=0?'+':'')+d;
+    dif.style.color = d<0?'var(--red)':'var(--green)';
+  } else dif.textContent='—';
+}
+window.updateDiff = updateDiff;
+
+// ══════════════════════════════════════════════════════════
+// CLOSE SHIFT (inventory)
+// ══════════════════════════════════════════════════════════
+function closeShift() {
+  const loc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  const isT = isTir(loc);
+  // collect inventory
+  const inv = {};
+  const fields = isT ? ['toy_small','key','balls_strike'] : isBall(loc) ? ['toy_small','toy_big','key','balls_air'] : ['toy_small'];
+  let allFilled = true;
+  fields.forEach(f => {
+    const el = document.getElementById(`inv-${f}`);
+    if(!el||el.value===''){allFilled=false;return;}
+    inv[f] = parseInt(el.value)||0;
+  });
+  if(isT) {
+    MACHINES.forEach(m=>{
+      const el=document.getElementById(`cs-ctr-${m}`);
+      if(!el||el.value===''){allFilled=false;}
+    });
+  }
+  if(!allFilled){alert('Заполните все поля для закрытия смены');return;}
+  // save inventory
+  const lp = locPath(loc);
+  update(dbRef(`${lp}/stock`), inv);
+  // readable inventory note
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const invNote=Object.entries(inv).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  addLog({type:'inventory', note:`Инвентаризация: ${invNote}`, loc}, loc);
+  if(isT) saveCountersFromClose();
+  // close shift
+  addLog({type:'shift_close', note:'Смена закрыта'}, loc);
+  update(dbRef(`${lp}/shift`), {open:false});
+  alert('Смена закрыта. Спасибо!');
+}
+window.closeShift = closeShift;
+
+function updateCsDiff(m) {
+  const inp = document.getElementById(`cs-ctr-${m}`);
+  const dif = document.getElementById(`cs-diff-${m}`);
+  if(!inp||!dif) return;
+  const v = parseInt(inp.value);
+  const prev = locData?.counters?.[m]?.prev;
+  if(!isNaN(v)&&v>=0&&prev!==undefined) {
+    const d = v-prev;
+    dif.textContent = (d>=0?'+':'')+d;
+    dif.style.color = d<0?'var(--red)':'var(--green)';
+  } else dif.textContent='—';
+}
+window.updateCsDiff = updateCsDiff;
+
+function saveCountersFromClose() {
+  const time = now();
+  const upd = {};
+  let saved = 0;
+  MACHINES.forEach(m => {
+    const v = parseInt(document.getElementById(`cs-ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0) { upd[`counters/${m}`]={prev:v,prevDate:today(),prevTime:time}; saved++; }
+  });
+  if(saved) {
+    update(dbRef(locPath()), upd);
+    addLog({type:'counters', note:`Счётчики при закрытии смены (${saved} авт.) в ${time}`});
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// OWNER: PAYMENTS
+// ══════════════════════════════════════════════════════════
+function savePayments(loc) {
+  const l = loc||ownerLoc;
+  const inp = document.getElementById('pay-inp');
+  const v = parseInt(inp?.value);
+  if(isNaN(v)||v<0){alert('Введите число');return;}
+  const data = allData[enc(l)]||{};
+  const toys = countType(data,'toy','toy_small','toy_big','duck_prize');
+  const keys = Math.max(0,v-toys);
+  const stock = data?.stock||{};
+  // deduct keys from stock
+  const oldPay = paymentsToday(data);
+  const oldKeys = oldPay!==null ? Math.max(0,oldPay-countType(data,'toy','toy_small','toy_big','duck_prize')) : 0;
+  let newKeyStock = (stock.key||0) + oldKeys - keys;
+  if(newKeyStock<0) newKeyStock=0;
+  update(dbRef(`${locPath(l)}/stock`), {key:newKeyStock});
+  update(dbRef(`${locPath(l)}/payments`), {date:today(),count:v,time:now()});
+  push(dbRef(`${locPath(l)}/log`), mkEntry('payment',{note:`Оплат: ${v} · Брелков расчёт: ${keys}`}));
+  const ps = document.getElementById('pay-saved');
+  if(ps) ps.textContent=`✓ Сохранено · Брелков расчёт: ${keys}`;
+}
+window.savePayments = savePayments;
+
+// ══════════════════════════════════════════════════════════
+// OWNER: STOCK
+// ══════════════════════════════════════════════════════════
+
+
+window.updateMoveItems = updateMoveItems;
+window.updateWriteOffItems = updateWriteOffItems;
+
+// ══════════════════════════════════════════════════════════
+// BUILD APP
+// ══════════════════════════════════════════════════════════
+function buildApp() {
+  document.getElementById('hdr-sub').textContent = CU.role==='owner'?'Владелец':(CU.location||'');
+  const badge = document.getElementById('hdr-badge');
+  badge.textContent = CU.role==='owner'?'ВЛАДЕЛЕЦ':'ОПЕРАТОР';
+  badge.className = 'hdr-badge '+(CU.role==='owner'?'badge-ow':'badge-op');
+
+  if(CU.role==='operator') buildOperatorUI();
+  else buildOwnerUI();
+}
+
+function buildOperatorUI() {
+  const loc = CU.location;
+  const isBD = loc==='Шарики+Уточки';
+  const isT = isTir(loc);
+
+  // Shift banner
+  document.getElementById('shift-banner-wrap').innerHTML = `
+    <div class="shift-banner shift-closed" id="shift-banner">
+      <span id="shift-txt">Смена не открыта</span>
+      <button class="shift-action open" id="shift-btn" onclick="handleShift()">Открыть смену</button>
+    </div>`;
+
+  // Location switcher for Шарики+Уточки
+  if(isBD) {
+    document.getElementById('loc-switcher-wrap').innerHTML = `
+      <div class="loc-switcher">
+        <button class="loc-sw-btn active" id="sw-ball" onclick="switchSubLoc('Шарики',this)">🎈 Шарики</button>
+        <button class="loc-sw-btn" id="sw-duck" onclick="switchSubLoc('Уточки',this)">🦆 Уточки</button>
+      </div>`;
+  }
+
+  // Stats bar
+  buildStatsBar(loc);
+
+  // Tabs
+  const tabs = document.getElementById('tabs-wrap');
+  const panels = document.getElementById('panels-wrap');
+  tabs.innerHTML = '';
+  panels.innerHTML = '';
+
+  let tabsHTML = `<button class="tab-btn active" onclick="swTab('game',this)">🎯 Игра</button>`;
+  let panelsHTML = `<div class="panel active" id="tab-game">${buildGamePanel(loc)}</div>`;
+
+  if(isT) {
+    tabsHTML += `<button class="tab-btn" onclick="swTab('counters',this)">📟 Счётчики</button>`;
+    panelsHTML += `<div class="panel" id="tab-counters">${buildCountersPanel()}</div>`;
+  }
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('mystock',this)">📦 Мой склад</button>`;
+  panelsHTML += `<div class="panel" id="tab-mystock">${buildMyStockPanel()}</div>`;
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('mylog',this)">📋 Журнал</button>`;
+  panelsHTML += `<div class="panel" id="tab-mylog">${buildLogPanel(false)}</div>`;
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('close-shift',this)">🔒 Закрытие</button>`;
+  panelsHTML += `<div class="panel" id="tab-close-shift">${buildCloseShiftPanel(loc)}</div>`;
+
+  tabs.innerHTML = tabsHTML;
+  panels.innerHTML = panelsHTML;
+}
+
+function buildOwnerUI() {
+  document.getElementById('shift-banner-wrap').innerHTML = '';
+  document.getElementById('loc-switcher-wrap').innerHTML = '';
+
+  // Stats bar (owner sees selected location)
+  buildStatsBar(ownerLoc);
+
+  const tabs = document.getElementById('tabs-wrap');
+  const panels = document.getElementById('panels-wrap');
+
+  tabs.innerHTML = `
+    <button class="tab-btn active" onclick="swTab('overview',this)">📊 Обзор</button>
+    <button class="tab-btn" onclick="swTab('recon',this)">🔍 Сверка</button>
+    <button class="tab-btn" onclick="swTab('owlog',this)">📋 Журнал</button>
+    <button class="tab-btn" onclick="swTab('owstock',this)">📦 Склад</button>
+    <button class="tab-btn" onclick="swTab('operators',this)">👥 Операторы</button>
+    <button class="tab-btn" onclick="swTab('settings',this)">⚙️</button>
+  `;
+
+  panels.innerHTML = `
+    <div class="panel active" id="tab-overview">${buildOverviewPanel()}</div>
+    <div class="panel" id="tab-recon">${buildReconPanel()}</div>
+    <div class="panel" id="tab-owlog">${buildLogPanel(true)}</div>
+    <div class="panel" id="tab-owstock">${buildOwnerStockPanel()}</div>
+    <div class="panel" id="tab-operators">${buildOperatorsPanel()}</div>
+    <div class="panel" id="tab-settings">${buildSettingsPanel()}</div>
+  `;
+}
+
+function buildStatsBar(loc) {
+  const data = allData[enc(loc)]||{};
+  const toys = countType(data,'toy','toy_small','duck_prize');
+  const keys = countType(data,'key_given');
+  const big = countType(data,'toy_big');
+  const own = countType(data,'own_game');
+  const tech = countType(data,'no_prize');
+  const pay = paymentsToday(data);
+  document.getElementById('stats-bar-wrap').innerHTML = `
+    <div class="stats-bar">
+      <div class="stat-item s-toy"><div class="stat-val">${toys}</div><div class="stat-lbl">🧸 Игрушек</div></div>
+      ${big>0?`<div class="stat-item s-big"><div class="stat-val">${big}</div><div class="stat-lbl">🎁 Больших</div></div>`:''}
+      <div class="stat-item s-key"><div class="stat-val">${keys}</div><div class="stat-lbl">🔑 Брелков</div></div>
+      <div class="stat-item s-own"><div class="stat-val">${own}</div><div class="stat-lbl">🎮 Своих</div></div>
+      ${pay!==null?`<div class="stat-item s-pay"><div class="stat-val">${pay}</div><div class="stat-lbl">💳 Оплат</div></div>`:''}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// GAME PANEL
+// ══════════════════════════════════════════════════════════
+function buildGamePanel(loc) {
+  const isT = isTir(loc);
+  const isBall2 = isBall(loc) || (loc==='Шарики+Уточки'&&subLoc==='Шарики');
+  const isDuck2 = isDuck(loc) || (loc==='Шарики+Уточки'&&subLoc==='Уточки');
+
+  let content = `<div class="warn-box" id="w-stock">⚠ Мало игрушек — сообщите владельцу!</div>`;
+
+  if(isT) {
+    content += `
+      <button class="prize-btn btn-toy" id="btn-toy" onclick="givePrize('toy')">
+        <span class="btn-emoji">🧸</span>
+        <div class="btn-text"><div class="btn-title">Выдал игрушку</div><div class="btn-sub">20 и более банок сбито</div></div>
+      </button>
+      <button class="prize-btn btn-key" id="btn-key" onclick="givePrize('key_given')">
+        <span class="btn-emoji">🔑</span>
+        <div class="btn-text"><div class="btn-title">Выдал брелок</div><div class="btn-sub">Менее 20 банок</div></div>
+      </button>
+      <button class="prize-btn btn-own" onclick="openOwnModal()">
+        <span class="btn-emoji">🎮</span>
+        <div class="btn-text"><div class="btn-title">Своя игра</div><div class="btn-sub">Пристрелка, друг, сотрудник...</div></div>
+      </button>`;
+  } else if(isBall2) {
+    content += `
+      <div class="ball-result">
+        <div class="ball-lbl">Сколько шаров лопнул?</div>
+        <div class="ball-num" id="ball-num">0</div>
+        <div class="ball-prize" id="ball-prize">введите результат</div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="numpad(1)">1</button>
+        <button class="num-btn" onclick="numpad(2)">2</button>
+        <button class="num-btn" onclick="numpad(3)">3</button>
+        <button class="num-btn" onclick="numpad(4)">4</button>
+        <button class="num-btn" onclick="numpad(5)">5</button>
+        <button class="num-btn" onclick="numpad(6)">6</button>
+        <button class="num-btn" onclick="numpad(7)">7</button>
+        <button class="num-btn" onclick="numpad(8)">8</button>
+        <button class="num-btn" onclick="numpad(9)">9</button>
+        <button class="num-btn num-zero" onclick="numpad(0)">0</button>
+        <button class="num-btn num-del" onclick="numpad('del')">⌫</button>
+      </div>
+      <button class="prize-btn btn-big" id="btn-ball-confirm" onclick="confirmBall()" disabled>
+        <span class="btn-emoji">✓</span>
+        <div class="btn-text"><div class="btn-title">Выдать и записать</div></div>
+      </button>
+      <button class="prize-btn btn-own" onclick="giveNoPrize()" style="margin-top:8px">
+        <span class="btn-emoji">🎮</span>
+        <div class="btn-text"><div class="btn-title">Без приза</div><div class="btn-sub">Редкий случай — друг попросил</div></div>
+      </button>`;
+  } else if(isDuck2) {
+    content += `
+      <button class="prize-btn btn-duck" id="btn-duck" onclick="givePrize('duck_prize')">
+        <span class="btn-emoji">🧸</span>
+        <div class="btn-text"><div class="btn-title">Выдал приз</div><div class="btn-sub">Приз гарантирован всем игрокам</div></div>
+      </button>`;
+  }
+
+  // stock mini
+  content += `<div class="sec-title" style="margin-top:14px">Остаток на складе</div>
+    <div class="stock-mini" id="stock-mini"></div>`;
+
+  // recent
+  content += `<div class="recent-wrap"><div class="recent-hdr">Последние записи</div><div id="recent-log"></div></div>`;
+
+  return content;
+}
+
+// ══════════════════════════════════════════════════════════
+// COUNTERS PANEL
+// ══════════════════════════════════════════════════════════
+function buildCountersPanel() {
+  return `
+    <div class="card">
+      <h4>📟 Показания счётчиков</h4>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:12px" id="ctr-saved-time"></div>
+      ${MACHINES.map(m=>`
+      <div class="ctr-row">
+        <div class="ctr-info">
+          <div class="ctr-name">Автомат ${m}</div>
+          <div class="ctr-prev" id="ctr-prev-${m}">утро: —</div>
+        </div>
+        <input class="ctr-input" type="number" id="cs-ctr-${m}" placeholder="0" min="0" inputmode="numeric" oninput="updateCsDiff(${m})">
+        <div class="ctr-diff" id="cs-diff-${m}">—</div>
+      </div>`).join('')}
+      <div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-top:8px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">Итого игр: <span id="ctr-total" style="color:var(--gold)">—</span></div>
+        <div style="font-size:13px;color:var(--dim);margin-top:4px">Своих + техн.: <span id="ctr-own">0</span> | Реальных: <span id="ctr-real" style="color:var(--green)">—</span></div>
+      </div>
+      <button class="btn-primary" onclick="saveCounters()">💾 Сохранить показания</button>
+    </div>
+    <div class="card">
+      <h4>🔵 Шары страйкбольные</h4>
+      <div class="form-row"><label>Остаток сейчас (приблизительно)</label><input type="number" id="balls-now" placeholder="~3200" min="0" inputmode="numeric"></div>
+      <button class="btn-primary" onclick="saveBalls()">💾 Сохранить</button>
+    </div>`;
+}
+
+function saveBalls() {
+  const v = parseInt(document.getElementById('balls-now')?.value);
+  if(isNaN(v)){alert('Введите число');return;}
+  update(dbRef(`${locPath()}/stock`), {balls_strike:v});
+  addLog({type:'balls_update', note:`Шары страйкб.: ~${v} шт`});
+  alert('✓ Сохранено');
+}
+window.saveBalls = saveBalls;
+
+// ══════════════════════════════════════════════════════════
+// MY STOCK PANEL
+// ══════════════════════════════════════════════════════════
+function buildMyStockPanel() {
+  return `
+    <div class="sec-title">Текущие остатки</div>
+    <div id="my-stock-cards"></div>
+    <div class="sec-title">Операции сегодня</div>
+    <div id="my-stock-ops"></div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOSE SHIFT PANEL
+// ══════════════════════════════════════════════════════════
+function buildCloseShiftPanel(loc) {
+  const isT = isTir(loc);
+  const isBall2 = isBall(loc)||(loc==='Шарики+Уточки'&&subLoc==='Шарики');
+  const isDuck2 = isDuck(loc)||(loc==='Шарики+Уточки'&&subLoc==='Уточки');
+
+  let fields = '';
+  if(isT) {
+    fields += `
+      <div class="form-row"><label>🧸 Игрушки маленькие (остаток)</label><input type="number" id="inv-toy_small" placeholder="45" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔑 Брелки (остаток)</label><input type="number" id="inv-key" placeholder="230" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔵 Шары страйкб. (остаток ~)</label><input type="number" id="inv-balls_strike" placeholder="~3200" min="0" inputmode="numeric"></div>
+      <div class="sec-title" style="margin-top:8px">Показания счётчиков</div>
+      ${MACHINES.map(m=>`
+      <div class="ctr-row">
+        <div class="ctr-info"><div class="ctr-name">Автомат ${m}</div><div class="ctr-prev" id="cs-prev-${m}">утро: —</div></div>
+        <input class="ctr-input" type="number" id="ctr-${m}" placeholder="0" min="0" inputmode="numeric" oninput="updateDiff(${m})">
+        <div class="ctr-diff" id="ctr-diff-${m}">—</div>
+      </div>`).join('')}`;
+  } else if(isBall2) {
+    fields += `
+      <div class="form-row"><label>🎁 Большие игрушки (остаток)</label><input type="number" id="inv-toy_big" placeholder="12" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🧸 Маленькие игрушки (остаток)</label><input type="number" id="inv-toy_small" placeholder="48" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔑 Брелки (остаток)</label><input type="number" id="inv-key" placeholder="186" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🎈 Шары надувные (остаток ~)</label><input type="number" id="inv-balls_air" placeholder="~45" min="0" inputmode="numeric"></div>`;
+  } else if(isDuck2) {
+    fields += `
+      <div class="form-row"><label>🧸 Игрушки (остаток)</label><input type="number" id="inv-toy_small" placeholder="6" min="0" inputmode="numeric"></div>`;
+  }
+
+  return `
+    <div class="card">
+      <h4>🔒 Закрытие смены</h4>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Внесите фактические остатки. Без этого смена не закроется.
+      </div>
+      ${fields}
+      <button class="btn-primary" onclick="closeShift()" style="background:var(--red)">🔒 Закрыть смену</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// LOG PANEL
+// ══════════════════════════════════════════════════════════
+function buildLogPanel(isOwner) {
+  return `
+    <div class="filter-row">
+      <select class="filter-sel" id="log-filter" onchange="renderLog()">
+        <option value="all">Все записи</option>
+        <option value="prize">Все призы</option>
+        <option value="own">Свои игры</option>
+        <option value="cancel">Отмены</option>
+        <option value="shift">Смены</option>
+        <option value="stock">Склад</option>
+        ${isOwner?'<option value="payment">Оплаты KitPos</option>':''}
+      </select>
+      ${isOwner?`<select class="filter-sel" id="log-loc-filter" onchange="renderLog()" style="max-width:130px">
+        <option value="all">Все точки</option>
+        ${LOCS.map(l=>`<option value="${l}">${l}</option>`).join('')}
+      </select>`:''}
+    </div>
+    ${isOwner?'<button class="btn-export" onclick="exportCSV()">📥 Экспорт CSV</button>':''}
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th>Время</th><th>Дата</th><th>Тип</th>
+          ${isOwner?'<th>Точка</th><th>Оператор</th>':''}
+          <th>Детали</th>
+        </tr></thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+      <div id="log-empty" style="display:none;text-align:center;color:var(--dim);padding:24px;font-size:14px">Записей нет</div>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--dim);padding:10px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+      📹 Время записей совпадает с камерой видеонаблюдения
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// OVERVIEW PANEL
+// ══════════════════════════════════════════════════════════
+function buildOverviewPanel() {
+  return `
+    <div id="ow-warns"></div>
+    <div class="card">
+      <h4>Все точки — сегодня</h4>
+      <div style="overflow-x:auto">
+        <table class="overview-table">
+          <thead><tr><th>Точка</th><th>Оплат</th><th>Призов</th><th>Ст.</th></tr></thead>
+          <tbody id="ov-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="loc-tabs" id="ov-loc-tabs">
+      ${LOCS.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchOwLoc('${l}',this)">${l}</div>`).join('')}
+    </div>
+    <div class="card" id="ov-detail">
+      <h4 id="ov-detail-title">Тир 1 — детали</h4>
+      <div class="kpi-grid" id="ov-kpi"></div>
+    </div>
+    <div class="card">
+      <h4>Ввести оплаты из KitPos</h4>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:10px">Личный кабинет KiT Vending → транзакции за сегодня</div>
+      <div id="ov-loc-name" style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
+      <div class="form-row"><input type="number" id="pay-inp" placeholder="0" min="0" inputmode="numeric" style="font-size:1.5rem;font-weight:700"></div>
+      <button class="btn-primary" onclick="savePayments()">✓ Применить · Списать брелки</button>
+      <div style="font-size:13px;color:var(--green);margin-top:8px;font-weight:600" id="pay-saved"></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// RECON PANEL
+// ══════════════════════════════════════════════════════════
+function buildReconPanel() {
+  return `
+    <div class="loc-tabs" id="recon-loc-tabs">
+      ${LOCS.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchReconLoc('${l}',this)">${l}</div>`).join('')}
+    </div>
+    <div class="card"><h4 id="recon-title">🔍 Сверка — Тир 1</h4><div id="recon-content"></div></div>
+    <div style="font-size:13px;color:var(--dim);padding:10px;background:var(--card);border-radius:8px;border:1px solid var(--border);line-height:1.7">
+      <strong style="color:var(--text)">Как читать:</strong><br>
+      Норма: оплаты = выданным призам<br>
+      <span style="color:var(--green)">✓ Совпадение — всё в порядке</span><br>
+      <span style="color:var(--red)">⚠ Расхождение — проверить камеры</span>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// OWNER STOCK PANEL
+// ══════════════════════════════════════════════════════════
+function buildOwnerStockPanel() {
+  const allLocs = ['Главный','Тир 1','Тир 2','Шарики','Уточки'];
+  const locOpts = ['Тир 1','Тир 2','Шарики','Уточки'].map(l=>`<option value="${l}">${l}</option>`).join('');
+  return `
+    <div class="loc-tabs" id="stock-loc-tabs">
+      ${allLocs.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchStockLoc('${l==='Главный'?'main':l}',this)">${l}</div>`).join('')}
+    </div>
+    <div id="stock-display"></div>
+    <div class="card">
+      <h4>➕ Приход товара (главный склад)</h4>
+      ${ALL_ITEMS.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="si-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('')}
+      <button class="btn-primary" onclick="stockIn()">✓ Оприходовать</button>
+    </div>
+    <div class="card">
+      <h4>📤 Выдать / Переместить</h4>
+      <div class="form-row"><label>Откуда</label>
+        <select id="mv-from" onchange="updateMoveItems()">
+          <option value="main">Главный склад</option>${locOpts}
+        </select>
+      </div>
+      <div class="form-row"><label>Куда</label>
+        <select id="mv-to" onchange="updateMoveItems()">
+          <option value="">— выбрать —</option>${locOpts}
+          <option value="main">Главный склад</option>
+        </select>
+      </div>
+      <div id="mv-items"></div>
+      <button class="btn-primary" onclick="stockMove()">🔄 Переместить</button>
+    </div>
+    <div class="card">
+      <h4>🗑 Списание</h4>
+      <div class="form-row"><label>Со склада</label>
+        <select id="wr-from" onchange="updateWriteOffItems()">
+          <option value="main">Главный склад</option>${locOpts}
+        </select>
+      </div>
+      <div id="wr-items"></div>
+      <div class="form-row"><label>Причина</label><input type="text" id="wr-reason" placeholder="Брак, потеря..."></div>
+      <button class="btn-primary" onclick="stockWriteOff()" style="background:var(--red)">🗑 Списать</button>
+    </div>`;
+}
+
+function getLocItems(loc) {
+  const allowed = LOC_ITEMS[loc] || LOC_ITEMS['main'];
+  return ALL_ITEMS.filter(it => allowed.includes(it.k));
+}
+
+function updateMoveItems() {
+  const from = document.getElementById('mv-from')?.value || 'main';
+  const to   = document.getElementById('mv-to')?.value   || '';
+  // show union of allowed items for both locations
+  const fromItems = getLocItems(from);
+  const toItems   = to ? getLocItems(to) : [];
+  // items that make sense: must be allowed on destination (or if no dest yet, show from items)
+  const items = to ? fromItems.filter(it => toItems.some(ti=>ti.k===it.k)) : fromItems;
+  const el = document.getElementById('mv-items');
+  if(!el) return;
+  if(items.length===0) {
+    el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Нет общих позиций для этого перемещения</div>';
+    return;
+  }
+  el.innerHTML = items.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="mv-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('');
+}
+
+function updateWriteOffItems() {
+  const from = document.getElementById('wr-from')?.value || 'main';
+  const items = getLocItems(from);
+  const el = document.getElementById('wr-items');
+  if(!el) return;
+  el.innerHTML = items.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="wr-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// STOCK OPERATIONS
+// ══════════════════════════════════════════════════════════
+function stockIn() {
+  const items = ['toy_small','toy_big','key','balls_strike','balls_air'];
+  const values = {};
+  items.forEach(it => {
+    const el = document.getElementById(`si-${it}`);
+    if(!el) return;
+    const raw = el.value.trim();
+    if(raw==='') return;
+    const v = parseInt(raw);
+    if(!isNaN(v) && v > 0) values[it] = v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции (больше 0)');return;}
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: +${v}`).join(', ');
+  if(!confirm(`Оприходовать на главный склад?
+
+${summary}`)) return;
+  get(dbRef('main_stock')).then(snap=>{
+    const cur = snap.val()||{};
+    const upd = {};
+    Object.entries(values).forEach(([k,v])=>{ upd[k]=(cur[k]||0)+v; });
+    update(dbRef('main_stock'), upd);
+    push(dbRef('main_stock_log'), {date:today(),time:now(),op:CU.name,type:'in',values,note:`Приход: ${summary}`});
+    alert('✓ Приход оприходован!');
+    items.forEach(it=>{const el=document.getElementById(`si-${it}`);if(el)el.value='';});
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+  });
+}
+window.stockIn = stockIn;
+
+function stockMove() {
+  const from = document.getElementById('mv-from')?.value;
+  const to = document.getElementById('mv-to')?.value;
+  if(!to){alert('Выберите куда переместить');return;}
+  if(from===to){alert('Откуда и куда одинаковые');return;}
+  // Read only items that are rendered in mv-items div
+  const values = {};
+  ALL_ITEMS.forEach(it=>{
+    const el=document.getElementById(`mv-${it.k}`);
+    if(!el) return;
+    const raw=el.value.trim();
+    if(raw==='') return;
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>0) values[it.k]=v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции');return;}
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  const fromName=from==='main'?'Главный склад':from;
+  const toName=to==='main'?'Главный склад':to;
+  if(!confirm(`Переместить с "${fromName}" на "${toName}"?
+
+${summary}`)) return;
+
+  const fromRef = from==='main' ? dbRef('main_stock') : dbRef(`${locPath(from)}/stock`);
+  const toRef   = to==='main'   ? dbRef('main_stock') : dbRef(`${locPath(to)}/stock`);
+
+  get(fromRef).then(fromSnap=>{
+    const fromCur=fromSnap.val()||{};
+    const fromUpd={};
+    Object.entries(values).forEach(([k,v])=>{ fromUpd[k]=Math.max(0,(fromCur[k]||0)-v); });
+    update(fromRef,fromUpd);
+
+    get(toRef).then(toSnap=>{
+      const toCur=toSnap.val()||{};
+      const toUpd={};
+      Object.entries(values).forEach(([k,v])=>{ toUpd[k]=(toCur[k]||0)+v; });
+      update(toRef,toUpd);
+
+      // log both sides
+      const logNote=`Перемещение ${fromName}→${toName}: ${summary}`;
+      push(dbRef('main_stock_log'),{date:today(),time:now(),op:CU.name,type:'move',note:logNote,values,from:fromName,to:toName});
+      if(from!=='main') push(dbRef(`${locPath(from)}/log`),mkEntry('stock_out',{note:`Перемещено на ${toName}: ${summary}`}));
+      if(to!=='main')   push(dbRef(`${locPath(to)}/log`),mkEntry('stock_out',{note:`Получено с ${fromName}: ${summary}`}));
+
+      // notify operator if moved to location
+      if(to!=='main') {
+        get(dbRef(`${locPath(to)}/pending_stock`)).then(ps=>{
+          const ps2=ps.val()||{};
+          const psUpd={};
+          Object.entries(values).forEach(([k,v])=>{ psUpd[k]=(ps2[k]||0)+v; });
+          update(dbRef(`${locPath(to)}/pending_stock`),psUpd);
+        });
+      }
+
+      alert(`✓ Перемещено с ${fromName} на ${toName}!`);
+      items.forEach(it=>{const el=document.getElementById(`mv-${it}`);if(el)el.value='';});
+      if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+      else renderLocStock(stockLoc);
+    });
+  });
+}
+window.stockMove = stockMove;
+
+function stockOut() {
+  // stockOut is now handled by stockMove
+  stockMove();
+}
+window.stockOut = stockOut;
+
+function stockWriteOff() {
+  const from = document.getElementById('wr-from')?.value||'main';
+  const items = ['toy_small','toy_big','key','balls_strike','balls_air'];
+  const values = {};
+  items.forEach(it=>{
+    const el=document.getElementById(`wr-${it}`);
+    if(!el) return;
+    const raw=el.value.trim();
+    if(raw==='') return;
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>0) values[it]=v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции');return;}
+  const reason=document.getElementById('wr-reason')?.value.trim()||'Не указана';
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  const fromName=from==='main'?'Главный склад':from;
+  if(!confirm(`Списать с "${fromName}"?
+
+${summary}
+Причина: ${reason}`)) return;
+
+  const stockRef = from==='main' ? dbRef('main_stock') : dbRef(`${locPath(from)}/stock`);
+  get(stockRef).then(snap=>{
+    const cur=snap.val()||{};
+    const upd={};
+    Object.entries(values).forEach(([k,v])=>{ upd[k]=Math.max(0,(cur[k]||0)-v); });
+    update(stockRef,upd);
+    const logNote=`Списание с ${fromName}: ${summary}. Причина: ${reason}`;
+    push(dbRef('main_stock_log'),{date:today(),time:now(),op:CU.name,type:'writeoff',note:logNote,values,from:fromName,reason});
+    if(from!=='main') push(dbRef(`${locPath(from)}/log`),mkEntry('stock_out',{note:logNote}));
+    alert('✓ Списание выполнено!');
+    items.forEach(it=>{const el=document.getElementById(`wr-${it}`);if(el)el.value='';});
+    const re=document.getElementById('wr-reason');if(re)re.value='';
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+    else renderLocStock(stockLoc);
+  });
+}
+window.stockWriteOff = stockWriteOff;
+
+// ══════════════════════════════════════════════════════════
+// BUILD APP
+// ══════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════
+function renderAll() {
+  const loc = CU.role==='operator' ? (CU.location==='Шарики+Уточки'?subLoc:CU.location) : ownerLoc;
+  const data = allData[enc(loc)]||{};
+  locData = data;
+  buildStatsBar(loc);
+  renderShiftBanner();
+  renderRecent(data);
+  renderStockMini(data);
+  renderCounterLabels(data);
+  renderMyStock(data);
+  renderMyStockOps(data);
+  if(CU.role==='owner') { renderOverview(); renderRecon(); renderOvDetail(data); renderOps(); }
+}
+
+function renderShiftBanner() {
+  if(CU.role!=='operator') return;
+  const loc = CU.location==='Шарики+Уточки'?subLoc:CU.location;
+  const data = allData[enc(loc)]||{};
+  const shift = data?.shift;
+  const banner=document.getElementById('shift-banner');
+  const txt=document.getElementById('shift-txt');
+  const btn=document.getElementById('shift-btn');
+  if(!banner) return;
+  if(shift?.open) {
+    banner.className='shift-banner shift-open';
+    txt.textContent=`✓ Смена открыта · ${shift.time||''}`;
+    btn.textContent='Закрыть смену'; btn.className='shift-action close';
+  } else {
+    banner.className='shift-banner shift-closed';
+    txt.textContent='Смена не открыта';
+    btn.textContent='Открыть смену'; btn.className='shift-action open';
+  }
+}
+
+function renderRecent(data) {
+  const el=document.getElementById('recent-log'); if(!el) return;
+  const items=Object.values(data?.log||{}).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5);
+  if(!items.length){el.innerHTML='<div class="ri-empty">Нет записей</div>';return;}
+  el.innerHTML=items.map(e=>{
+    const cls={toy:'ri-toy',key_given:'ri-key',toy_small:'ri-toy',toy_big:'ri-big',duck_prize:'ri-toy',ball_prize:'ri-big',own_game:'ri-own',no_prize:'ri-own',cancel:'ri-cancel',shift_open:'ri-shift',shift_close:'ri-shift'}[e.type]||'';
+    return `<div class="recent-item fade-in"><span class="ri-time">${e.time||''}</span><span class="ri-type ${cls}">${typeLabel(e.type)}${e.note&&!e.note.includes('{')?` — ${e.note}`:''}</span></div>`;
+  }).join('');
+}
+
+function renderStockMini(data) {
+  const el=document.getElementById('stock-mini'); if(!el) return;
+  const s=data?.stock||{};
+  const loc=CU?.location==='Шарики+Уточки'?subLoc:(CU?.location||'main');
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const warn=document.getElementById('w-stock');
+  if(warn) warn.classList.toggle('show',(s.toy_small!==undefined&&s.toy_small<=3));
+  const pills=[];
+  if(allowed.includes('toy_small')&&s.toy_small!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-toy">${s.toy_small}</div><div class="sp-lbl">🧸 Маленьких</div></div>`);
+  if(allowed.includes('toy_big')&&s.toy_big!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-big">${s.toy_big}</div><div class="sp-lbl">🎁 Больших</div></div>`);
+  if(allowed.includes('key')&&s.key!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-key">${s.key}</div><div class="sp-lbl">🔑 Брелков</div></div>`);
+  if(allowed.includes('balls_strike')&&s.balls_strike!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-ball">~${s.balls_strike}</div><div class="sp-lbl">🔵 Шаров</div></div>`);
+  if(allowed.includes('balls_air')&&s.balls_air!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-ball">~${s.balls_air}</div><div class="sp-lbl">🎈 Надув.</div></div>`);
+  el.innerHTML=pills.join('');
+}
+
+function renderCounterLabels(data) {
+  const counters=data?.counters||{};
+  let total=0; let hasAll=true;
+  MACHINES.forEach(m=>{
+    const pl=document.getElementById(`ctr-prev-${m}`);
+    const c=counters[m]||{};
+    if(pl) pl.textContent=c.prev!==undefined?`утро: ${c.prev} (${c.prevTime||''})` :'утро: —';
+    const inp=document.getElementById(`ctr-${m}`);
+    const v=parseInt(inp?.value);
+    if(!isNaN(v)&&v>=0&&c.prev!==undefined) total+=v-c.prev; else hasAll=false;
+    updateDiff(m);
+  });
+  if(hasAll) {
+    const el=document.getElementById('ctr-total'); if(el)el.textContent=total;
+    const tl=todayLog(data);
+    const ownCnt=tl.filter(l=>l.type==='own_game'||l.type==='no_prize').length;
+    const oel=document.getElementById('ctr-own'); if(oel)oel.textContent=ownCnt;
+    const rel=document.getElementById('ctr-real'); if(rel)rel.textContent=total-ownCnt;
+  }
+  // close-shift panel prev labels
+  if(document.getElementById('cs-prev-1')) {
+    MACHINES.forEach(m=>{
+      const pl=document.getElementById(`cs-prev-${m}`);
+      const c=counters[m]||{};
+      if(pl) pl.textContent=c.prev!==undefined?`утро: ${c.prev} (${c.prevTime||''})`:'утро: —';
+      updateCsDiff(m);
+    });
+  }
+}
+
+function renderMyStock(data) {
+  const el=document.getElementById('my-stock-cards'); if(!el) return;
+  const s=data?.stock||{};
+  const loc=CU?.location==='Шарики+Уточки'?subLoc:(CU?.location||'main');
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const allItemDefs=[
+    {key:'toy_small',ico:'🧸',name:'Игрушки маленькие',cls:'sc-toy'},
+    {key:'toy_big',ico:'🎁',name:'Игрушки большие',cls:'sc-big'},
+    {key:'key',ico:'🔑',name:'Брелки',cls:'sc-key'},
+    {key:'balls_strike',ico:'🔵',name:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {key:'balls_air',ico:'🎈',name:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  const items=allItemDefs.filter(it=>allowed.includes(it.key));
+  el.innerHTML=items.filter(it=>s[it.key]!==undefined).map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info">
+        <div class="sc-name">${it.name}</div>
+        <div class="sc-cnt ${it.cls}">${it.approx?'~':''}${s[it.key]} шт</div>
+        ${s[it.key]<=3?'<div class="sc-warn">⚠ Критически мало!</div>':''}
+      </div>
+    </div>`).join('');
+}
+
+function renderMyStockOps(data) {
+  const el=document.getElementById('my-stock-ops'); if(!el) return;
+  const ops=todayLog(data).filter(l=>['stock_out','stock_in','inventory','balls_update'].includes(l.type));
+  if(!ops.length){el.innerHTML='<div style="color:var(--dim);font-size:14px;padding:8px">Нет операций сегодня</div>';return;}
+  el.innerHTML=ops.slice(0,10).map(e=>{
+    let note=e.note||'';
+    note=note.replace(/\{[^}]+\}/g,'').trim();
+    if(!note) note=typeLabel(e.type);
+    return `<div class="recent-item"><span class="ri-time">${e.time||''}</span><span class="ri-type ri-shift">${typeLabel(e.type)}</span><span style="font-size:13px;color:var(--dim);flex:1">${note}</span></div>`;
+  }).join('');
+}
+
+function renderLog() {
+  const tbody=document.getElementById('log-tbody'); if(!tbody) return;
+  const filter=document.getElementById('log-filter')?.value||'all';
+  const locF=document.getElementById('log-loc-filter')?.value||'all';
+  const isOwner=CU?.role==='owner';
+  let entries=[];
+  if(isOwner) {
+    Object.entries(allData).forEach(([lk,ld])=>{
+      const ln=LOCS.find(l=>enc(l)===lk)||lk;
+      Object.values(ld?.log||{}).forEach(e=>entries.push({...e,_loc:ln}));
+    });
+  } else entries=Object.values(locData?.log||{});
+  entries.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const prizeTypes=['toy','key_given','toy_small','toy_big','duck_prize','ball_prize'];
+  if(filter==='prize') entries=entries.filter(e=>prizeTypes.includes(e.type));
+  else if(filter==='own') entries=entries.filter(e=>e.type==='own_game'||e.type==='no_prize');
+  else if(filter==='cancel') entries=entries.filter(e=>e.type==='cancel');
+  else if(filter==='shift') entries=entries.filter(e=>e.type?.startsWith('shift'));
+  else if(filter==='stock') entries=entries.filter(e=>['stock_in','stock_out','inventory','balls_update'].includes(e.type));
+  else if(filter==='payment') entries=entries.filter(e=>e.type==='payment');
+  if(locF!=='all') entries=entries.filter(e=>(e._loc||e.loc)===locF);
+  const empty=document.getElementById('log-empty');
+  if(!entries.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  const cls={toy:'td-toy',key_given:'td-key',toy_small:'td-toy',toy_big:'td-big',duck_prize:'td-toy',ball_prize:'td-big',own_game:'td-own',cancel:'td-cancel',shift_open:'td-shift',shift_close:'td-shift',payment:'td-pay'};
+  tbody.innerHTML=entries.map(e=>`<tr>
+    <td class="td-time">${e.time||''}</td>
+    <td class="td-dim">${e.date||''}</td>
+    <td class="${cls[e.type]||''}">${typeLabel(e.type)}</td>
+    ${isOwner?`<td class="td-dim">${e._loc||e.loc||''}</td><td class="td-dim">${e.op||''}</td>`:''}
+    <td class="td-dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(e.note||'').replace(/\{[^}]+\}/g,'')}</td>
+  </tr>`).join('');
+}
+window.renderLog=renderLog;
+
+function renderOverview() {
+  const tbody=document.getElementById('ov-tbody'); if(!tbody) return;
+  tbody.innerHTML=LOCS.map(l=>{
+    const data=allData[enc(l)]||{};
+    const pay=paymentsToday(data);
+    const prizes=allPrizesToday(data);
+    const warn=pay!==null&&Math.abs(pay-prizes)>2;
+    const ok=pay!==null&&pay===prizes;
+    return `<tr onclick="switchOwLoc('${l}',null)">
+      <td style="font-weight:700">${l}</td>
+      <td>${pay!==null?pay:'—'}</td>
+      <td>${prizes}</td>
+      <td class="${warn?'ov-warn':ok?'ov-ok':''}">${warn?'⚠ '+Math.abs(pay-prizes):ok?'✓':'—'}</td>
+    </tr>`;
+  }).join('');
+  renderOvDetail(allData[enc(ownerLoc)]||{});
+  renderOvWarns();
+}
+
+function renderOvWarns() {
+  const el=document.getElementById('ow-warns'); if(!el) return;
+  const warns=[];
+  LOCS.forEach(l=>{
+    const s=(allData[enc(l)]||{})?.stock||{};
+    if(s.toy_small!==undefined&&s.toy_small<=3) warns.push(`⚠ ${l}: мало игрушек (${s.toy_small} шт)`);
+    if(s.key!==undefined&&s.key<=10) warns.push(`⚠ ${l}: мало брелков (${s.key} шт)`);
+  });
+  el.innerHTML=warns.map(w=>`<div style="background:var(--red-bg);border:1.5px solid #f0b0a8;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--red);font-weight:700;margin-bottom:10px">${w}</div>`).join('');
+}
+
+function renderOvDetail(data) {
+  const title=document.getElementById('ov-detail-title'); if(title)title.textContent=`${ownerLoc} — детали`;
+  const kpi=document.getElementById('ov-kpi'); if(!kpi) return;
+  const pay=paymentsToday(data);
+  const toys=countType(data,'toy','toy_small','duck_prize');
+  const big=countType(data,'toy_big');
+  const keys=keysCalc(data);
+  kpi.innerHTML=`
+    <div class="kpi-box kpi-gold"><div class="kpi-val">${pay!==null?pay:'—'}</div><div class="kpi-lbl">Оплат KitPos</div></div>
+    <div class="kpi-box kpi-toy"><div class="kpi-val">${toys}</div><div class="kpi-lbl">🧸 Игрушек</div></div>
+    ${big>0?`<div class="kpi-box kpi-big"><div class="kpi-val">${big}</div><div class="kpi-lbl">🎁 Больших</div></div>`:''}
+    <div class="kpi-box kpi-key"><div class="kpi-val">${keys!==null?keys:'—'}</div><div class="kpi-lbl">🔑 Брелков</div></div>`;
+  const pi=document.getElementById('pay-inp');
+  if(pi&&!pi.value&&pay!==null) pi.value=pay;
+  const ln=document.getElementById('ov-loc-name');
+  if(ln) ln.textContent=ownerLoc;
+}
+
+function renderRecon(loc) {
+  const el=document.getElementById('recon-content'); if(!el) return;
+  const title=document.getElementById('recon-title');
+  if(title) title.textContent=`🔍 Сверка — ${reconLoc}`;
+  const data=allData[enc(reconLoc)]||{};
+  const pay=paymentsToday(data);
+  const toys=countType(data,'toy','toy_small','duck_prize');
+  const big=countType(data,'toy_big');
+  const keys=keysCalc(data);
+  const allP=allPrizesToday(data);
+  const diff=pay!==null?pay-allP:null;
+  let html='';
+  if(isTir(reconLoc)) {
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Игрушек</span><span class="rr-val rv-toy">${toys}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🔑 Брелков</span><span class="rr-val rv-key">${keys!==null?keys:'введите оплаты'}</span></div>`;
+  } else if(isBall(reconLoc)) {
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🎁 Больших</span><span class="rr-val rv-big">${big}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Маленьких</span><span class="rr-val rv-toy">${toys}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🔑 Брелков</span><span class="rr-val rv-key">${countType(data,'key_given','ball_prize')}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">Итого призов</span><span class="rr-val rv-gold">${allP}</span></div>`;
+  } else {
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Выдано</span><span class="rr-val rv-toy">${countType(data,'duck_prize')}</span></div>`;
+  }
+  if(diff!==null) {
+    html+=diff===0?'<div class="recon-ok">✓ Данные совпадают</div>':
+      Math.abs(diff)<=2?`<div class="recon-ok">✓ Разница ${Math.abs(diff)} — в норме</div>`:
+      `<div class="recon-warn">⚠ Расхождение ${Math.abs(diff)} — проверить камеры</div>`;
+  } else {
+    html+='<div style="font-size:13px;color:var(--dim);margin-top:10px">Введите оплаты во вкладке Обзор</div>';
+  }
+  el.innerHTML=html;
+}
+
+function renderOps() {
+  const el=document.getElementById('ops-list'); if(!el) return;
+  const ops=Object.entries(allUsers).filter(([,u])=>u.role==='operator');
+  if(!ops.length){el.innerHTML='<div style="color:var(--dim);font-size:14px;padding:10px">Операторов нет</div>';return;}
+  el.innerHTML=ops.map(([k,u])=>`
+    <div class="op-item">
+      <div style="flex:1"><div class="op-name">${u.name}</div><div class="op-meta">📍 ${u.location} · 🔑 ${u.pw}</div></div>
+      <button class="op-del" onclick="deleteOp('${k}')">Удалить</button>
+    </div>`).join('');
+}
+
+function renderMainStock(s) {
+  const el=document.getElementById('stock-display'); if(!el) return;
+  if(stockLoc!=='main') return;
+  const items=[
+    {k:'toy_small',ico:'🧸',n:'Игрушки маленькие',cls:'sc-toy'},
+    {k:'toy_big',ico:'🎁',n:'Игрушки большие',cls:'sc-big'},
+    {k:'key',ico:'🔑',n:'Брелки',cls:'sc-key'},
+    {k:'balls_strike',ico:'🔵',n:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {k:'balls_air',ico:'🎈',n:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  el.innerHTML='<div class="sec-title">Главный склад</div>'+items.map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info"><div class="sc-name">${it.n}</div>
+        <div class="sc-cnt ${it.cls}">${s[it.k]!==undefined?(it.approx?'~':'')+s[it.k]+' шт':'—'}</div></div>
+    </div>`).join('');
+}
+
+function renderLocStock(loc) {
+  const el=document.getElementById('stock-display'); if(!el) return;
+  const s=(allData[enc(loc)]||{})?.stock||{};
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const allItemDefs=[
+    {k:'toy_small',ico:'🧸',n:'Игрушки маленькие',cls:'sc-toy'},
+    {k:'toy_big',ico:'🎁',n:'Игрушки большие',cls:'sc-big'},
+    {k:'key',ico:'🔑',n:'Брелки',cls:'sc-key'},
+    {k:'balls_strike',ico:'🔵',n:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {k:'balls_air',ico:'🎈',n:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  const items=allItemDefs.filter(it=>allowed.includes(it.k));
+  el.innerHTML=`<div class="sec-title">${loc}</div>`+items.filter(it=>s[it.k]!==undefined).map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info"><div class="sc-name">${it.n}</div>
+        <div class="sc-cnt ${it.cls}">${it.approx?'~':''}${s[it.k]} шт</div>
+        ${s[it.k]<=3?'<div class="sc-warn">⚠ Мало!</div>':''}
+      </div>
+    </div>`).join('');
+}
+
+function exportCSV() {
+  let entries=[];
+  Object.entries(allData).forEach(([lk,ld])=>{
+    const ln=LOCS.find(l=>enc(l)===lk)||lk;
+    Object.values(ld?.log||{}).forEach(e=>entries.push({...e,_loc:ln}));
+  });
+  entries.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const rows=['Дата,Время,Точка,Тип,Детали,Оператор']
+    .concat(entries.map(e=>`${e.date||''},${e.time||''},${e._loc||e.loc||''},${typeLabel(e.type)},${(e.note||'').replace(/,/g,';').replace(/\{[^}]+\}/g,'')},${e.op||''}`));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n'));
+  a.download=`arcada_${today().replace(/\./g,'-')}.csv`;
+  a.click();
+}
+window.exportCSV=exportCSV;
+
+// ══════════════════════════════════════════════════════════
+// TAB / LOC SWITCHERS
+// ══════════════════════════════════════════════════════════
+function swTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+  const p=document.getElementById('tab-'+id); if(p)p.classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='mylog'||id==='owlog') renderLog();
+  if(id==='overview') renderOverview();
+  if(id==='recon') renderRecon();
+  if(id==='operators') renderOps();
+  if(id==='owstock') {
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+    else renderLocStock(stockLoc);
+    setTimeout(()=>{ updateMoveItems(); updateWriteOffItems(); },150);
+  }
+}
+window.swTab=swTab;
+
+function switchSubLoc(loc, btn) {
+  subLoc=loc;
+  document.querySelectorAll('.loc-sw-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  locData=allData[enc(loc)]||{};
+  const gp=document.getElementById('tab-game');
+  if(gp) gp.innerHTML=buildGamePanel(CU.location);
+  renderAll();
+}
+window.switchSubLoc=switchSubLoc;
+
+function switchOwLoc(loc, btn) {
+  ownerLoc=loc;
+  if(btn){
+    document.querySelectorAll('#ov-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  buildStatsBar(loc);
+  const data=allData[enc(loc)]||{};
+  renderOvDetail(data);
+  const pi=document.getElementById('pay-inp');
+  if(pi){pi.value='';const pay=paymentsToday(data);if(pay!==null)pi.value=pay;}
+  const ps=document.getElementById('pay-saved');if(ps)ps.textContent='';
+}
+window.switchOwLoc=switchOwLoc;
+
+function switchReconLoc(loc, btn) {
+  reconLoc=loc;
+  document.querySelectorAll('#recon-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderRecon(loc);
+}
+window.switchReconLoc=switchReconLoc;
+
+function switchStockLoc(loc, btn) {
+  stockLoc=loc;
+  document.querySelectorAll('#stock-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(loc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+  else renderLocStock(loc);
+}
+window.switchStockLoc=switchStockLoc;
+
+function renderStockPanel() {
+  const loc=CU?.role==='owner'?ownerLoc:CU?.location;
+  const data=CU?.role==='owner'?(allData[enc(loc)]||{}):locData;
+  const e=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const s=data?.stock||{};
+  e('stk-toy',s.toy_small!==undefined?s.toy_small+' шт':'—');
+  e('stk-big',s.toy_big!==undefined?s.toy_big+' шт':'—');
+  e('stk-key',s.key!==undefined?s.key+' шт':'—');
+}
+
+
+async function addOperator() {
+  const name=document.getElementById('op-name')?.value.trim();
+  const loc=document.getElementById('op-loc')?.value;
+  const pw=document.getElementById('op-pw')?.value.trim();
+  if(!name||!loc||!pw){alert('Заполните все поля');return;}
+  await set(dbRef(`users/op_${Date.now()}`),{name,role:'operator',location:loc,pw});
+  ['op-name','op-pw'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  alert(`✓ Оператор "${name}" добавлен!`);
+  renderOps();
+}
+window.addOperator = addOperator;
+
+async function deleteOp(key) {
+  const u=allUsers[key];
+  if(!confirm(`Удалить "${u?.name}"?`))return;
+  await remove(dbRef(`users/${key}`));
+}
+window.deleteOp = deleteOp;
+
+async function saveInitCounters() {
+  const loc=document.getElementById('init-loc')?.value;
+  const upd={};
+  MACHINES.forEach(m=>{
+    const v=parseInt(document.getElementById(`init-ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0)upd[`counters/${m}`]={prev:v,prevDate:today(),prevTime:now()};
+  });
+  if(!Object.keys(upd).length){alert('Введите хотя бы одно показание');return;}
+  await update(dbRef(locPath(loc)),upd);
+  alert(`✓ Начальные показания для "${loc}" сохранены!`);
+}
+window.saveInitCounters = saveInitCounters;
+
+async function savePrizeRules() {
+  const tirToy=parseInt(document.getElementById('s-tir-toy')?.value);
+  const ballBig=parseInt(document.getElementById('s-ball-big')?.value);
+  const ballSmall=parseInt(document.getElementById('s-ball-small')?.value);
+  if(isNaN(tirToy)||isNaN(ballBig)||isNaN(ballSmall)){alert('Введите числа');return;}
+  await update(dbRef('prizes'),{tir_toy:tirToy,ball_big:ballBig,ball_small:ballSmall});
+  alert('✓ Правила сохранены!');
+}
+window.savePrizeRules = savePrizeRules;
+
+async function saveOwnerPw() {
+  const pw=document.getElementById('new-pw')?.value.trim();
+  if(!pw){alert('Введите пароль');return;}
+  await update(dbRef(`users/${CU.key}`),{pw});
+  CU.pw=pw; alert('✓ Пароль изменён!');
+}
+window.saveOwnerPw = saveOwnerPw;
+
+
+init();
+</script>
+</body>
+</html>
