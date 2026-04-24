@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Аркада v15 — Учёт призов</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --card2: #f9f9f9;
+  --border: #e0e0e0;
+  --text: #1a1a1a;
+  --text2: #666666;
+  --dim: #999999;
+  --gold: #c47a00;
+  --gold-bg: #fff8e8;
+  --red: #c0392b;
+  --red-bg: #fdf0ee;
+  --green: #1a7a3a;
+  --green-bg: #edf7f1;
+  --blue: #1a5a9a;
+  --blue-bg: #eef4fc;
+  --purple: #6a1a8a;
+  --purple-bg: #f6eefa;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.12);
+  --radius: 10px;
+  --font-size: 16px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  font-size: var(--font-size);
+  min-height: 100vh;
+}
+
+/* ── LOADER ── */
+#loader {
+  position: fixed; inset: 0; background: #fff;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 999;
+}
+.loader-title { font-size: 1.8rem; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+.spinner { width: 36px; height: 36px; border: 3px solid #eee; border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+.loader-text { font-size: 14px; color: var(--dim); margin-top: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── LOGIN ── */
+#login-screen {
+  min-height: 100vh; display: none; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px; background: var(--bg);
+  position: fixed; inset: 0; z-index: 500; overflow-y: auto;
+}
+.login-logo { font-size: 2.5rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; text-align: center; }
+.login-sub { font-size: 14px; color: var(--dim); margin-bottom: 28px; text-align: center; }
+.login-box { width: 100%; max-width: 360px; background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow2); }
+.login-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+.conn-badge { font-size: 13px; text-align: center; padding: 8px; border-radius: 8px; margin-bottom: 14px; font-weight: 600; }
+.conn-ok { background: var(--green-bg); color: var(--green); }
+.conn-err { background: var(--red-bg); color: var(--red); }
+.f-label { font-size: 13px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 6px; }
+.f-input, .f-select {
+  width: 100%; padding: 12px 14px; margin-bottom: 14px;
+  background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 16px; outline: none;
+}
+.f-input:focus, .f-select:focus { border-color: var(--gold); }
+.login-btn {
+  width: 100%; padding: 14px; background: var(--gold); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.login-btn:active { opacity: .85; }
+.login-err { color: var(--red); font-size: 13px; text-align: center; margin-top: 8px; min-height: 18px; }
+
+/* ── APP HEADER ── */
+.app-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow);
+}
+.hdr-left { display: flex; flex-direction: column; }
+.hdr-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
+.hdr-sub { font-size: 12px; color: var(--dim); }
+.hdr-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; display: inline-block; margin-top: 2px;
+}
+.badge-op { background: var(--red-bg); color: var(--red); }
+.badge-ow { background: var(--green-bg); color: var(--green); }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.hdr-time { font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.sync-dot.off { background: var(--red); }
+.logout-btn {
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+.logout-btn:active { background: var(--red-bg); color: var(--red); }
+
+/* ── SHIFT BANNER ── */
+.shift-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.shift-open { background: var(--green-bg); color: var(--green); }
+.shift-closed { background: var(--red-bg); color: var(--red); }
+.shift-action {
+  font-size: 13px; font-weight: 700; padding: 6px 14px;
+  border-radius: 8px; cursor: pointer; border: 1.5px solid;
+}
+.shift-action.open { border-color: var(--green); color: var(--green); background: #fff; }
+.shift-action.close { border-color: var(--red); color: var(--red); background: #fff; }
+
+/* ── LOCATION SWITCHER (Шарики/Уточки) ── */
+.loc-switcher {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.loc-sw-btn {
+  flex: 1; padding: 12px; text-align: center; font-size: 15px;
+  font-weight: 600; cursor: pointer; color: var(--dim);
+  border: none; background: none; border-bottom: 3px solid transparent;
+}
+.loc-sw-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  display: flex; background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.stat-item { flex: 1; text-align: center; padding: 10px 4px; border-right: 1px solid var(--border); }
+.stat-item:last-child { border-right: none; }
+.stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--dim); margin-top: 2px; font-weight: 600; }
+.stat-item.s-toy .stat-val { color: var(--red); }
+.stat-item.s-key .stat-val { color: var(--blue); }
+.stat-item.s-big .stat-val { color: var(--purple); }
+.stat-item.s-own .stat-val { color: var(--dim); }
+.stat-item.s-tech .stat-val { color: var(--dim); }
+.stat-item.s-pay .stat-val { color: var(--gold); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; background: var(--card);
+  border-bottom: 1px solid var(--border); overflow-x: auto;
+}
+.tab-btn {
+  flex-shrink: 0; padding: 12px 14px; font-size: 14px; font-weight: 600;
+  color: var(--dim); border: none; background: none; cursor: pointer;
+  border-bottom: 3px solid transparent; white-space: nowrap;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: var(--gold-bg); }
+
+.panel { display: none; padding: 16px; padding-bottom: 100px; }
+.panel.active { display: block; }
+
+/* ── SECTION TITLE ── */
+.sec-title {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--border);
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card h4 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--gold); }
+
+/* ── PRIZE BUTTONS ── */
+.prize-btn {
+  width: 100%; padding: 18px 16px; border-radius: var(--radius);
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; border: 2px solid; margin-bottom: 10px;
+  transition: transform .1s; text-align: left;
+}
+.prize-btn:active:not([disabled]) { transform: scale(.98); opacity: .85; }
+.prize-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.prize-btn .btn-emoji { font-size: 2rem; flex-shrink: 0; }
+.prize-btn .btn-text { flex: 1; }
+.prize-btn .btn-title { font-size: 17px; font-weight: 700; }
+.prize-btn .btn-sub { font-size: 13px; margin-top: 2px; }
+
+.btn-toy { background: var(--red-bg); border-color: var(--red); }
+.btn-toy .btn-title { color: var(--red); }
+.btn-toy .btn-sub { color: #a03020; }
+
+.btn-key { background: var(--blue-bg); border-color: var(--blue); }
+.btn-key .btn-title { color: var(--blue); }
+.btn-key .btn-sub { color: #1a4a80; }
+
+.btn-big { background: var(--purple-bg); border-color: var(--purple); }
+.btn-big .btn-title { color: var(--purple); }
+.btn-big .btn-sub { color: #5a1a7a; }
+
+.btn-duck { background: var(--green-bg); border-color: var(--green); }
+.btn-duck .btn-title { color: var(--green); }
+.btn-duck .btn-sub { color: #1a6030; }
+
+.btn-own { background: var(--card2); border-color: var(--border); }
+.btn-own .btn-title { color: var(--dim); }
+.btn-own .btn-sub { color: var(--dim); }
+
+.btn-tech { background: var(--card2); border-color: var(--border); }
+.btn-tech .btn-title { color: var(--dim); }
+
+/* ── SMALL BUTTON ── */
+.btn-sm {
+  padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-sm-ghost { background: var(--card2); border-color: var(--border); color: var(--text2); }
+.btn-sm-ghost:active { background: var(--border); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  transform: translateY(100%); transition: transform .25s ease;
+  background: var(--card); border-top: 2px solid var(--gold);
+  padding: 14px 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+#toast.show { transform: translateY(0); }
+.toast-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.toast-lbl { flex: 1; font-size: 15px; font-weight: 600; }
+.toast-timer { font-size: 1.3rem; font-weight: 700; color: var(--gold); min-width: 32px; text-align: right; }
+.toast-bar { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 12px; overflow: hidden; }
+.toast-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 1s linear; }
+.toast-btns { display: flex; gap: 10px; }
+.toast-confirm {
+  flex: 2; padding: 13px; background: var(--green); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.toast-cancel {
+  flex: 1; padding: 13px; background: var(--red); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+
+/* ── RECENT LOG ── */
+.recent-wrap {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 12px;
+}
+.recent-hdr {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  text-transform: uppercase; letter-spacing: .08em; background: var(--card2);
+}
+.recent-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.recent-item:last-child { border-bottom: none; }
+.ri-time { font-size: 13px; color: var(--dim); min-width: 60px; font-weight: 600; }
+.ri-type { font-size: 14px; font-weight: 600; flex: 1; }
+.ri-toy { color: var(--red); }
+.ri-key { color: var(--blue); }
+.ri-big { color: var(--purple); }
+.ri-own { color: var(--dim); font-style: italic; }
+.ri-tech { color: var(--dim); }
+.ri-cancel { color: var(--red); font-style: italic; }
+.ri-shift { color: var(--green); }
+.ri-empty { padding: 16px; text-align: center; color: var(--dim); font-size: 14px; }
+
+/* ── STOCK MINI ── */
+.stock-mini {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.stock-pill {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px; text-align: center; flex: 1; min-width: 70px;
+}
+.stock-pill .sp-val { font-size: 1.2rem; font-weight: 700; }
+.stock-pill .sp-lbl { font-size: 11px; color: var(--dim); font-weight: 600; }
+.sp-toy { color: var(--red); }
+.sp-key { color: var(--blue); }
+.sp-big { color: var(--purple); }
+.sp-ball { color: var(--gold); }
+
+/* ── COUNTERS ── */
+.ctr-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 8px;
+}
+.ctr-info { flex: 1; }
+.ctr-name { font-size: 15px; font-weight: 700; }
+.ctr-prev { font-size: 13px; color: var(--dim); margin-top: 2px; }
+.ctr-input {
+  width: 90px; padding: 10px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; outline: none;
+  color: var(--text);
+}
+.ctr-input:focus { border-color: var(--gold); }
+.ctr-diff { width: 50px; text-align: right; font-size: 1rem; font-weight: 700; }
+
+/* ── BALL INPUT (numpad) ── */
+.ball-result {
+  text-align: center; padding: 16px; background: var(--card2);
+  border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;
+}
+.ball-num { font-size: 4rem; font-weight: 700; color: var(--gold); line-height: 1; }
+.ball-lbl { font-size: 13px; color: var(--dim); margin-bottom: 6px; }
+.ball-prize { font-size: 1.2rem; font-weight: 700; margin-top: 8px; }
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.num-btn {
+  padding: 16px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 1.3rem; font-weight: 700; cursor: pointer;
+  text-align: center; transition: all .1s;
+}
+.num-btn:active { background: var(--gold-bg); border-color: var(--gold); }
+.num-btn.num-del { color: var(--red); }
+.num-btn.num-zero { grid-column: span 2; }
+
+/* ── TABLES ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  padding: 8px 8px; border-bottom: 2px solid var(--border);
+  text-align: left; text-transform: uppercase; letter-spacing: .05em;
+}
+.data-table td { font-size: 14px; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.data-table tr:hover td { background: var(--card2); }
+.td-time { color: var(--dim); font-size: 13px; white-space: nowrap; font-weight: 600; }
+.td-toy { color: var(--red); font-weight: 700; }
+.td-key { color: var(--blue); font-weight: 700; }
+.td-big { color: var(--purple); font-weight: 700; }
+.td-own { color: var(--dim); font-style: italic; }
+.td-cancel { color: var(--red); font-style: italic; }
+.td-shift { color: var(--green); font-weight: 700; }
+.td-pay { color: var(--gold); font-weight: 700; }
+.td-dim { color: var(--dim); font-size: 13px; }
+
+/* ── STOCK CARDS ── */
+.stock-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.sc-icon { font-size: 1.6rem; flex-shrink: 0; }
+.sc-info { flex: 1; }
+.sc-name { font-size: 15px; font-weight: 700; }
+.sc-cnt { font-size: 1.6rem; font-weight: 700; line-height: 1; margin-top: 2px; }
+.sc-warn { font-size: 12px; color: var(--red); font-weight: 600; margin-top: 2px; }
+.sc-toy { color: var(--red); }
+.sc-key { color: var(--blue); }
+.sc-big { color: var(--purple); }
+.sc-ball { color: var(--gold); }
+
+/* ── FORMS ── */
+.form-row { margin-bottom: 14px; }
+.form-row label { font-size: 13px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 6px; }
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%; padding: 12px 14px; background: var(--card2);
+  border: 1.5px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: 'Inter', sans-serif; font-size: 16px; outline: none;
+}
+.form-row input:focus, .form-row select:focus { border-color: var(--gold); }
+.form-row input[type=number] { text-align: center; font-weight: 700; font-size: 1.2rem; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width: 100%; padding: 14px; background: var(--gold); border: none;
+  border-radius: 8px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px;
+}
+.btn-primary:active { opacity: .85; }
+.btn-danger {
+  width: 100%; padding: 11px; background: var(--card2); border: 1.5px solid #f0b0a8;
+  border-radius: 8px; color: var(--red); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+}
+.btn-export {
+  width: 100%; padding: 11px; background: var(--card2); border: 1.5px solid #9ad4b0;
+  border-radius: 8px; color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+}
+
+/* ── OWNER OVERVIEW TABLE ── */
+.overview-table { width: 100%; border-collapse: collapse; }
+.overview-table th {
+  font-size: 12px; font-weight: 700; color: var(--dim);
+  padding: 8px; border-bottom: 2px solid var(--border); text-align: left;
+}
+.overview-table td { font-size: 15px; padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; }
+.overview-table tr { cursor: pointer; }
+.overview-table tr:hover td { background: var(--gold-bg); }
+.ov-ok { color: var(--green); }
+.ov-warn { color: var(--red); }
+
+/* ── RECON ── */
+.recon-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.recon-row:last-child { border-bottom: none; }
+.rr-lbl { font-size: 14px; color: var(--dim); font-weight: 600; }
+.rr-val { font-size: 1.1rem; font-weight: 700; }
+.rv-gold { color: var(--gold); }
+.rv-toy { color: var(--red); }
+.rv-key { color: var(--blue); }
+.rv-big { color: var(--purple); }
+.rv-green { color: var(--green); }
+.rv-red { color: var(--red); }
+.rv-dim { color: var(--dim); }
+.recon-ok { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--green); font-weight: 700; margin-top: 10px; }
+.recon-warn { background: var(--red-bg); border: 1.5px solid #f0b0a8; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--red); font-weight: 700; margin-top: 10px; }
+
+/* ── OPERATORS ── */
+.op-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+}
+.op-name { font-size: 15px; font-weight: 700; }
+.op-meta { font-size: 13px; color: var(--dim); margin-top: 2px; }
+.op-del { font-size: 13px; color: var(--red); font-weight: 700; padding: 7px 14px; border: 1.5px solid #f0b0a8; border-radius: 8px; cursor: pointer; }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.kpi-box { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+.kpi-val { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.kpi-lbl { font-size: 11px; color: var(--dim); font-weight: 700; margin-top: 3px; text-transform: uppercase; }
+.kpi-gold .kpi-val { color: var(--gold); }
+.kpi-toy .kpi-val { color: var(--red); }
+.kpi-key .kpi-val { color: var(--blue); }
+.kpi-big .kpi-val { color: var(--purple); }
+.kpi-green .kpi-val { color: var(--green); }
+
+/* ── LOC TABS ── */
+.loc-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+
+/* v15: Переключатель даты в Обзоре */
+.day-switcher {
+  display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+  padding: 4px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.day-btn {
+  flex: 1; min-width: 80px; padding: 10px 8px; text-align: center;
+  background: transparent; border: none; border-radius: 7px;
+  font-size: 14px; font-weight: 600; color: var(--dim); cursor: pointer;
+  transition: all 0.15s;
+}
+.day-btn.active { background: var(--gold-bg); color: var(--gold); }
+.day-btn:active { opacity: 0.7; }
+.retro-warn {
+  background: var(--gold-bg); border: 1.5px solid var(--gold);
+  color: var(--gold); font-size: 13px; font-weight: 600;
+  padding: 10px 12px; border-radius: 8px; margin-bottom: 10px;
+}
+.loc-tab {
+  flex: 1; min-width: 60px; padding: 9px 8px; text-align: center;
+  background: var(--card2); border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; font-weight: 700; color: var(--dim); cursor: pointer;
+}
+.loc-tab.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+
+/* ── FILTER ROW ── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-sel {
+  flex: 1; padding: 10px 12px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); outline: none;
+}
+.filter-sel:focus { border-color: var(--gold); }
+
+/* ── WARN BOX ── */
+.warn-box { display: none; background: var(--red-bg); border: 1.5px solid #f0b0a8; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: var(--red); font-weight: 700; margin-bottom: 12px; }
+.warn-box.show { display: block; }
+
+/* ── INFO BOX ── */
+.info-box { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: var(--green); font-weight: 600; margin-bottom: 12px; }
+
+/* ── SHIFT MODAL ── */
+#shift-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#shift-modal.show { display: flex; }
+.shift-modal-box { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; box-shadow: var(--shadow2); }
+.shift-modal-box h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+.shift-modal-box p { font-size: 14px; color: var(--text2); margin-bottom: 14px; line-height: 1.6; }
+.sm-prev { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+.sm-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.sm-row:last-child { margin-bottom: 0; }
+.sm-btns { display: flex; gap: 10px; }
+.sm-confirm { flex: 2; padding: 13px; background: var(--green); border: none; border-radius: 8px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+.sm-cancel { flex: 1; padding: 13px; background: var(--card2); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; }
+
+/* ── OWN GAME MODAL ── */
+#own-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+#own-modal.show { display: flex; }
+.own-modal-box { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; }
+.own-modal-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; }
+.own-reason-btns { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.own-reason-btn {
+  padding: 13px; background: var(--card2); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left;
+}
+.own-reason-btn.selected { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+.own-reason-btn:active { opacity: .8; }
+
+/* ── INCOMING ALERT ── */
+.incoming-alert { background: var(--green-bg); border: 1.5px solid #9ad4b0; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+.ia-title { font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+.ia-body { font-size: 13px; color: var(--text2); }
+.ia-confirm { margin-top: 10px; padding: 10px; background: var(--green); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn .2s ease; }
+
+@keyframes btnPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(192,57,43,.2); } 50% { box-shadow: 0 0 0 10px rgba(192,57,43,0); } }
+.btn-pulse { animation: btnPulse .35s ease; }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-title">🎯 АРКАДА</div>
+  <div class="spinner"></div>
+  <div class="loader-text">Подключение к облаку...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🎯 АРКАДА</div>
+  <div class="login-sub">Система учёта призов</div>
+  <div class="login-box">
+    <h3>Вход в систему</h3>
+    <div class="conn-badge conn-ok" id="conn-badge">✓ Подключено к облаку</div>
+    <label class="f-label">Кто входит</label>
+    <select class="f-select" id="user-sel"><option value="">— выберите —</option></select>
+    <label class="f-label">Пароль</label>
+    <input class="f-input" type="password" id="pw-inp" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Войти →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- SHIFT MODAL -->
+<div id="shift-modal">
+  <div class="shift-modal-box">
+    <h3>Открытие смены</h3>
+    <p>Проверьте остатки с прошлой смены и приход. Всё совпадает?</p>
+    <div class="sm-prev" id="sm-prev"></div>
+    <div class="sm-btns">
+      <button class="sm-confirm" onclick="confirmShiftOpen()">✓ Всё верно</button>
+      <button class="sm-cancel" onclick="shiftDiscrepancy()">✗ Расхождение</button>
+    </div>
+  </div>
+</div>
+
+<!-- OWN GAME MODAL -->
+<div id="own-modal">
+  <div class="own-modal-box">
+    <h3>🎮 Своя игра</h3>
+    <div class="own-reason-btns">
+      <button class="own-reason-btn" id="own-btn-practice" onclick="selectReasonPractice()">🔧 Пристрелка / наладка</button>
+      <button class="own-reason-btn" id="own-btn-other" onclick="selectReasonOther()">📝 Другое</button>
+    </div>
+    <div id="own-other-wrap" style="display:none;margin-bottom:14px">
+      <label class="f-label" style="display:block;margin-bottom:6px">Причина (обязательно, мин. 3 символа)</label>
+      <input class="f-input" id="own-other-text" type="text" placeholder="Например: имя человека, ситуация..." oninput="updateOwnConfirmBtn()" style="margin-bottom:0">
+    </div>
+    <button class="sm-confirm" id="own-confirm-btn" style="width:100%;margin-bottom:8px;display:none" onclick="confirmOwnReason()">✓ Записать</button>
+    <button class="sm-cancel" style="width:100%" onclick="closeOwnModal()">Отмена</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <div class="toast-top">
+    <span class="toast-lbl" id="toast-lbl"></span>
+    <span class="toast-timer" id="toast-timer">30</span>
+  </div>
+  <div class="toast-bar"><div class="toast-fill" id="toast-fill" style="width:100%"></div></div>
+  <div class="toast-btns">
+    <button class="toast-confirm" onclick="toastOk()">✓ Подтвердить</button>
+    <button class="toast-cancel" onclick="toastNo()">✕ Отменить</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="app-hdr">
+    <div class="hdr-left">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="hdr-title">🎯 АРКАДА</span>
+        <div class="sync-dot" id="sync-dot"></div>
+      </div>
+      <div class="hdr-sub" id="hdr-sub"></div>
+      <span class="hdr-badge" id="hdr-badge"></span>
+    </div>
+    <div class="hdr-right">
+      <span class="hdr-time" id="hdr-time"></span>
+      <button class="logout-btn" onclick="doLogout()">Выход</button>
+    </div>
+  </div>
+
+  <div id="shift-banner-wrap"></div>
+  <div id="loc-switcher-wrap"></div>
+  <div id="stats-bar-wrap"></div>
+  <div class="tabs" id="tabs-wrap"></div>
+  <div id="panels-wrap" style="display:none"></div>
+</div>
+
+<script type="module">
+// ══════════════════════════════════════════════════════════
+// АРКАДА v15 — CHANGELOG
+// ══════════════════════════════════════════════════════════
+// v15 (Обзор за любой день):
+//   - Над таблицей «Все точки» появились кнопки: Сегодня / Вчера / 📅 Дата
+//   - Вся таблица, KPI деталей точки, автозаполнение оплат — работают
+//     с выбранным днём. Состояние смены определяется по событиям
+//     shift_open/shift_close в логе за выбранный день (а не по
+//     текущему shift.open).
+//   - Новые хелперы: logForDay, countTypeDay, paymentsForDay,
+//     allPrizesForDay, keysCalcForDay, shiftStateForDay, dayLabel.
+//   - paymentsForDay для сегодня — читает data.payments; для прошлых
+//     дней — ищет последнюю запись type=payment в логе за тот день.
+//   - Ретроспективные оплаты: владелец может ввести оплаты задним
+//     числом за любой прошлый день. Такая запись помечается флагом
+//     retro:true и полем forDate. Склад брелков при этом НЕ меняется —
+//     только фиксируется факт. В логе виден след, в журнале пометка.
+//   - Записи payment теперь дополнительно хранят count:N (число оплат)
+//     в отдельном поле — для надёжного чтения без парсинга note.
+//
+// v14 БЛОК 1: СЕРВЕРНОЕ ВРЕМЯ (main change)
+//   - Все записи (log, shift, counters, payments, main_stock_log) используют
+//     serverTimestamp() вместо Date.now() — время ставит сервер Firebase.
+//     Оператор не может подделать время переводом часов на телефоне.
+//   - Отображение времени — по MSK (Europe/Moscow) через fmtDate/fmtTime.
+//   - Поля date/time в записях больше не хранятся — вычисляются из ts.
+//   - Фильтры журнала (Сегодня/Вчера/7 дней) — через dayKey(ts) в MSK.
+//   - Счётчики: prevDate/prevTime → prevTs (серверное время).
+//   - Часы в шапке приложения — по локальному времени устройства (UI only).
+//
+// v14 БЛОК 3': УПРОЩЕНИЕ ТИРА
+//   - Убрана кнопка «🔑 Выдал брелок» в Тире (очередь из 4 стрелков —
+//     оператор не успевает нажимать). Теперь в Тире только две кнопки:
+//     «🧸 Выдал игрушку» и «🎮 Своя игра».
+//   - Брелки списываются автоматически при вводе оплат владельцем
+//     (формула: брелки = оплаты − игрушки).
+//   - Статус-бар оператора Тира: колонка «🔑 Брелков» (выдано сегодня)
+//     заменена на «🔑 В коробке» (текущий остаток склада точки).
+//   - Шарики и Уточки — без изменений.
+//
+// v14 БЛОК 5: УПРОЩЕНИЕ «СВОЕЙ ИГРЫ»
+//   - В модалке остались только 2 причины: «🔧 Пристрелка / наладка»
+//     и «📝 Другое».
+//   - «Пристрелка» пишется сразу через Toast, без комментария.
+//   - «Другое» требует обязательный комментарий (≥3 символа) —
+//     кнопка «✓ Записать» заблокирована пока не введут пояснение.
+//   - В запись лога добавлено поле reason: 'target_practice' | 'other'.
+//   - Комментарий сохраняется в поле note и виден в журнале.
+//   - Владелец видит кто когда и с каким пояснением делал свои игры —
+//     закрыта дыра с «замаскированными хищениями» через свои игры.
+//
+// v14 БЛОК 4: ТРАНЗАКЦИИ (защита от race conditions)
+//   - savePayments: защита от двойного нажатия через флаг _savingPayments
+//     и блокировку кнопки на 3 секунды после клика.
+//   - Открытие смены (confirmShiftOpen, shiftDiscrepancy): одна
+//     runTransaction над корнем локации — атомарно проверяет что смена
+//     не открыта другим оператором, зачисляет pending_stock → stock,
+//     очищает pending_stock, открывает смену. Защита от:
+//       · Двойного открытия одной смены разными операторами
+//       · Потери pending_stock при параллельном перемещении
+//       · Двойного зачисления pending при двойном нажатии «✓ Всё верно»
+//   - Перемещение склада (stockMove): две независимые runTransaction
+//     (на источник и приёмник). Защита от race conditions при
+//     параллельных перемещениях.
+//   - ИСПРАВЛЕНИЕ БАГА v13: ранее при перемещении на точку товар шёл
+//     одновременно в stock И в pending_stock — оператор получал двойное
+//     зачисление при открытии смены. Теперь на точку товар попадает
+//     ТОЛЬКО в pending_stock, оператор подтверждает при открытии смены.
+// ══════════════════════════════════════════════════════════
+// v13 и ранее — исправления из прошлых версий:
+//
+// FIX v9-1: Исправлен конфликт ID счётчиков в buildCloseShiftPanel
+//           (ctr-N → cs-ctr-N, updateDiff → updateCsDiff)
+//           Теперь показания счётчиков корректно сохраняются при закрытии смены
+// FIX v9-2: «Своя игра» и «Без приза» теперь через Toast (30 сек отмена)
+//           Раньше записывались мгновенно без возможности отката
+// FIX v9-3: Race condition при перемещении склада устранён —
+//           оба склада читаются одновременно через Promise.all
+// FIX v9-4: Статус-бар для оператора Шарики+Уточки теперь показывает
+//           данные текущей subLoc, а не нули
+// FIX v9-5: Сверка Шариков: ball_prize правильно разбивается по типу приза
+//           (игрушки большие / маленькие / брелки — раньше всё шло в брелки)
+// FIX v9-6: Уточки в сверке: любое расхождение = предупреждение
+//           (приз гарантирован каждому, норма ±2 неприменима)
+// FIX v9-7: Кнопка «Закрыть смену» в баннере → переход на вкладку «Закрытие»
+//           Нельзя закрыть смену без инвентаризации
+// FIX v9-8: Предупреждение при выдаче приза с нулевым остатком на складе
+// FIX v9-9: Модальное окно открытия смены показывало ненужные позиции (напр.
+//           Игрушки большие и Шары надувные в Тире) — теперь фильтрует по LOC_ITEMS
+// FIX v9-10: Кнопка «Своя игра» оставалась активной при закрытой смене —
+//            теперь блокируется вместе с остальными кнопками выдачи
+// FIX v9-11: Сверка Тира переработана — теперь показывает:
+//            «Оплаты + свои игры» = цифра, которую надо сравнить со счётчиком.
+//            Если счётчик автомата показал больше — были игры вне учёта (злоупотребление)
+// ══════════════════════════════════════════════════════════
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, get, update, remove, serverTimestamp, runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ══════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════
+const FB = {
+  apiKey: "AIzaSyA-EkSGmpaFRAXNWtQcjo1J8YQNcESno7I",
+  authDomain: "arcada-uchot.firebaseapp.com",
+  databaseURL: "https://arcada-uchot-default-rtdb.firebaseio.com",
+  projectId: "arcada-uchot",
+  storageBucket: "arcada-uchot.firebasestorage.app",
+  messagingSenderId: "252902676946",
+  appId: "1:252902676946:web:9018b0af777d557b27900b"
+};
+const app = initializeApp(FB);
+const db = getDatabase(app);
+const dbRef = path => ref(db, path);
+
+// ══════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════
+const LOCS = ['Тир 1', 'Тир 2', 'Шарики', 'Уточки'];
+const TIR = ['Тир 1', 'Тир 2'];
+const MACHINES = [1,2,3,4];
+const TOAST_SEC = 30;
+
+// Items allowed per location
+const LOC_ITEMS = {
+  'main':   ['toy_small','toy_big','key','balls_strike','balls_air'],
+  'Тир 1':  ['toy_small','key','balls_strike'],
+  'Тир 2':  ['toy_small','key','balls_strike'],
+  'Шарики': ['toy_small','toy_big','key','balls_air'],
+  'Уточки': ['toy_small'],
+};
+const ALL_ITEMS = [
+  {k:'toy_small',  l:'🧸 Игрушки маленькие (15–20 см)'},
+  {k:'toy_big',    l:'🎁 Игрушки большие (35–50 см)'},
+  {k:'key',        l:'🔑 Брелки'},
+  {k:'balls_strike',l:'🔵 Шары страйкбольные'},
+  {k:'balls_air',  l:'🎈 Шары надувные'},
+];
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let CU = null;           // current user
+let allUsers = {};
+let allData = {};        // all location data
+let locData = {};        // current operator's location data
+let ownerLoc = 'Тир 1'; // owner selected location
+let ownerDay = null;     // v15: выбранный день в Обзоре; null = сегодня, иначе 'YYYY-MM-DD'
+let reconLoc = 'Тир 1';
+let stockLoc = 'Тир 1';
+let subLoc = 'Шарики';  // for Шарики+Уточки operator
+let clockTmr = null;
+let pendingEntry = null;
+let toastTmr = null, toastSec = TOAST_SEC;
+let ballCount = 0;
+
+// ══════════════════════════════════════════════════════════
+// HELPERS — v14: все времена на сервере Firebase, отображение в MSK
+// ══════════════════════════════════════════════════════════
+// Часовой пояс для отображения времени во всём приложении
+const TZ = 'Europe/Moscow';
+
+// Локальное время на шапке (часы) — используем время устройства
+const nowLocal = () => new Date().toLocaleTimeString('ru-RU', {timeZone:TZ, hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+// Форматирование ts (миллисекунды с сервера) в строку даты/времени по MSK
+const fmtDate = ts => {
+  if(!ts || typeof ts !== 'number') return '';
+  return new Date(ts).toLocaleDateString('ru-RU', {timeZone:TZ});
+};
+const fmtTime = ts => {
+  if(!ts || typeof ts !== 'number') return '';
+  return new Date(ts).toLocaleTimeString('ru-RU', {timeZone:TZ, hour:'2-digit',minute:'2-digit',second:'2-digit'});
+};
+const fmtTimeShort = ts => {
+  if(!ts || typeof ts !== 'number') return '';
+  return new Date(ts).toLocaleTimeString('ru-RU', {timeZone:TZ, hour:'2-digit',minute:'2-digit'});
+};
+
+// Ключ "день" в MSK — 'YYYY-MM-DD'. Используется для сравнения одного дня
+const dayKey = ts => {
+  if(!ts || typeof ts !== 'number') return '';
+  // Получаем компоненты даты в MSK
+  const parts = new Intl.DateTimeFormat('en-CA', {timeZone:TZ, year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(ts));
+  const y = parts.find(p=>p.type==='year').value;
+  const m = parts.find(p=>p.type==='month').value;
+  const d = parts.find(p=>p.type==='day').value;
+  return `${y}-${m}-${d}`;
+};
+const todayKey = () => dayKey(Date.now());
+const yesterdayKey = () => dayKey(Date.now() - 24*60*60*1000);
+
+// ts годен только если это число. Если запись "в полёте" (serverTimestamp ещё не применён),
+// ts приходит как объект {.sv:'timestamp'} — такие записи считаем "только что".
+const isValidTs = ts => typeof ts === 'number' && ts > 0;
+
+// Для обратной совместимости во время переходного периода: если ts нет (например,
+// старая запись), используем 0 — она не попадёт ни в один фильтр дня.
+const tsOf = e => isValidTs(e?.ts) ? e.ts : 0;
+
+const enc = l => l.replace(/\//g,'-').replace(/\s/g,'_');
+const locPath = l => {
+  const loc = l || (CU?.location==='Шарики+Уточки' ? subLoc : CU?.location);
+  return `locations/${enc(loc)}`;
+};
+const isTir = l => TIR.includes(l||CU?.location);
+const isBall = l => (l||CU?.location)==='Шарики';
+const isDuck = l => (l||CU?.location)==='Уточки';
+const isBallDuck = l => ['Шарики','Уточки'].includes(l||CU?.location);
+
+function todayLog(data) {
+  const tk = todayKey();
+  return Object.values(data?.log||{}).filter(l => dayKey(tsOf(l)) === tk);
+}
+function countType(data, ...types) {
+  return todayLog(data).filter(l=>types.includes(l.type)).length;
+}
+function paymentsToday(data) {
+  const p = data?.payments;
+  if(!p) return null;
+  return dayKey(tsOf(p)) === todayKey() ? p.count : null;
+}
+function allPrizesToday(data) {
+  return countType(data,'toy','key_given','toy_small','toy_big','duck_prize','ball_prize');
+}
+function keysCalc(data) {
+  const p = paymentsToday(data);
+  if(p===null) return null;
+  const toys = countType(data,'toy','toy_small','toy_big','duck_prize');
+  return Math.max(0, p - toys);
+}
+
+// ══════════════════════════════════════════════════════════
+// v15: версии с параметром day (YYYY-MM-DD или null для «сегодня»)
+// Используются в Обзоре для просмотра за любой день.
+// ══════════════════════════════════════════════════════════
+
+// Возвращает ключ дня для запроса: null / undefined → сегодня
+function resolveDay(day) {
+  return day || todayKey();
+}
+
+// Записи лога за конкретный день.
+// Учитывает поле forDate (для ретроспективных записей вроде payment с retro:true):
+// если forDate есть — сверяем с ним, иначе с dayKey(ts).
+function logForDay(data, day) {
+  const dk = resolveDay(day);
+  return Object.values(data?.log||{}).filter(l => {
+    const effectiveDay = l.forDate || dayKey(tsOf(l));
+    return effectiveDay === dk;
+  });
+}
+
+// Количество записей выбранных типов за день.
+function countTypeDay(data, day, ...types) {
+  return logForDay(data, day).filter(l=>types.includes(l.type)).length;
+}
+
+// Оплаты KitPos за конкретный день:
+//  - Для СЕГОДНЯ (day=null или сегодняшний): читаем data.payments (текущее значение)
+//  - Для других дней: находим последнюю запись type='payment' за тот день в логе,
+//    парсим count из её note («Оплат: 15 · Брелков расчёт: 12» → 15)
+function paymentsForDay(data, day) {
+  const dk = resolveDay(day);
+  // Сегодня — берём из data.payments
+  if(dk === todayKey()) {
+    const p = data?.payments;
+    if(!p) return null;
+    return dayKey(tsOf(p)) === dk ? p.count : null;
+  }
+  // Прошлый день — ищем последнюю запись payment в логе за этот день
+  const payments = logForDay(data, day).filter(l => l.type === 'payment');
+  if(!payments.length) return null;
+  // Сортируем по ts desc, берём первую
+  payments.sort((a,b)=>tsOf(b)-tsOf(a));
+  const last = payments[0];
+  // count хранится в отдельном поле (добавим при записи) или парсим из note
+  if(typeof last.count === 'number') return last.count;
+  const m = (last.note||'').match(/Оплат:\s*(\d+)/);
+  return m ? parseInt(m[1]) : null;
+}
+
+// Все призы за день.
+function allPrizesForDay(data, day) {
+  return countTypeDay(data, day, 'toy','key_given','toy_small','toy_big','duck_prize','ball_prize');
+}
+
+// Расчётные брелки Тира за день.
+function keysCalcForDay(data, day) {
+  const p = paymentsForDay(data, day);
+  if(p===null) return null;
+  const toys = countTypeDay(data, day, 'toy','toy_small','toy_big','duck_prize');
+  return Math.max(0, p - toys);
+}
+
+// Состояние смены на указанный день (была ли открыта и кем).
+// Ищем в логе последнее shift_open без последующего shift_close за этот день.
+// Возвращает {open:bool, op:string} либо null если событий не было.
+function shiftStateForDay(data, day) {
+  const dk = resolveDay(day);
+  // Для сегодня — используем текущее shift
+  if(dk === todayKey()) {
+    const s = data?.shift;
+    if(!s) return null;
+    return {open: !!s.open, op: s.op || ''};
+  }
+  // Для прошлого дня — смотрим события shift_open/shift_close за тот день
+  const events = logForDay(data, day)
+    .filter(e => e.type === 'shift_open' || e.type === 'shift_close')
+    .sort((a,b)=>tsOf(a)-tsOf(b));
+  if(!events.length) return null;
+  // Последнее событие определяет состояние на конец дня
+  const last = events[events.length - 1];
+  const opener = events.find(e => e.type === 'shift_open');
+  return {
+    open: last.type === 'shift_open',
+    op: opener ? (opener.op || '') : ''
+  };
+}
+
+// Читаемое имя дня: «сегодня», «вчера» или «23.04.2026»
+function dayLabel(day) {
+  const dk = resolveDay(day);
+  if(dk === todayKey()) return 'сегодня';
+  if(dk === yesterdayKey()) return 'вчера';
+  // Преобразуем YYYY-MM-DD в DD.MM.YYYY
+  const parts = dk.split('-');
+  if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  return dk;
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+function showLogin() {
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function init() {
+  // Always show login after 4 seconds max
+  setTimeout(showLogin, 4000);
+
+  onValue(dbRef('.info/connected'), snap => {
+    const ok = snap.val()===true;
+    const dot = document.getElementById('sync-dot');
+    if(dot) { dot.className='sync-dot'+(ok?'':' off'); }
+    const badge = document.getElementById('conn-badge');
+    if(badge) { badge.className='conn-badge '+(ok?'conn-ok':'conn-err'); badge.textContent=ok?'✓ Подключено к облаку':'✗ Нет соединения'; }
+    // Show login as soon as we know connection status
+    showLogin();
+  });
+
+  onValue(dbRef('users'), snap => {
+    allUsers = snap.val()||{};
+    buildUserSelect();
+  });
+
+  try {
+    const snap = await get(dbRef('users'));
+    if(!snap.exists()) {
+      await set(dbRef('users/owner'), {name:'Владелец',role:'owner',location:'all',pw:'0000'});
+    }
+  } catch(e) {
+    console.warn('Init error:', e);
+  }
+  showLogin();
+}
+
+function buildUserSelect() {
+  const sel = document.getElementById('user-sel'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— выберите —</option>';
+  Object.entries(allUsers).forEach(([k,u]) => {
+    const o = document.createElement('option');
+    o.value = k;
+    o.textContent = `${u.name} (${u.role==='owner'?'Владелец':u.location})`;
+    sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
+}
+
+// ══════════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+  const k = document.getElementById('user-sel').value;
+  const pw = document.getElementById('pw-inp').value.trim();
+  const err = document.getElementById('login-err');
+  if(!k){err.textContent='Выберите пользователя';return;}
+  const u = allUsers[k];
+  if(!u){err.textContent='Не найден';return;}
+  if(pw!==u.pw){err.textContent='Неверный пароль';document.getElementById('pw-inp').value='';return;}
+  CU = {...u, key:k};
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildApp();
+  startListening();
+  startClock();
+}
+window.doLogin = doLogin;
+
+function doLogout() {
+  clearInterval(clockTmr);
+  toastNo();
+  CU = null; locData = {};
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-inp').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+window.doLogout = doLogout;
+
+// ══════════════════════════════════════════════════════════
+// REAL-TIME LISTENER
+// ══════════════════════════════════════════════════════════
+function startListening() {
+  if(CU.role==='operator') {
+    const locs = CU.location==='Шарики+Уточки' ? ['Шарики','Уточки'] : [CU.location];
+    locs.forEach(l => {
+      onValue(dbRef(locPath(l)), snap => {
+        if(!allData[enc(l)]) allData[enc(l)] = {};
+        allData[enc(l)] = snap.val()||{};
+        if(l===CU.location||l===subLoc||(CU.location==='Шарики+Уточки'&&l==='Шарики')) {
+          locData = allData[enc(CU.location==='Шарики+Уточки'?subLoc:CU.location)]||{};
+        }
+        renderAll();
+      });
+    });
+  } else {
+    onValue(dbRef('locations'), snap => {
+      allData = snap.val()||{};
+      locData = allData[enc(ownerLoc)]||{};
+      renderAll();
+    });
+    onValue(dbRef('main_stock'), snap => {
+      renderMainStock(snap.val()||{});
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════════
+function startClock() {
+  const tick = () => { const el=document.getElementById('hdr-time'); if(el)el.textContent=nowLocal(); };
+  tick(); clockTmr = setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════════════════
+// SHIFT
+// ══════════════════════════════════════════════════════════
+function handleShift() {
+  // FIX 3: use correct loc for Шарики+Уточки operator
+  const loc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  const data = allData[enc(loc)]||{};
+  const shift = data?.shift;
+  if(shift?.open) {
+    // FIX 7: redirect to close-shift tab so operator fills in inventory — never skip it
+    const closeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b=>b.textContent.includes('Закрытие'));
+    if(closeBtn) { closeBtn.click(); }
+    else {
+      // fallback if tab not found
+      if(!confirm('Закрыть смену?')) return;
+      addLog({type:'shift_close', note:'Смена закрыта'}, loc);
+      update(dbRef(`${locPath(loc)}/shift`), {open:false});
+    }
+  } else {
+    showShiftModal(loc);
+  }
+}
+window.handleShift = handleShift;
+
+function showShiftModal(loc) {
+  const useLoc = loc || (CU.location==='Шарики+Уточки' ? subLoc : CU.location);
+  const data = allData[enc(useLoc)]||{};
+  const stock = data?.stock||{};
+  const pending = data?.pending_stock||{};
+  let rows = '';
+  const allItems = [
+    {key:'toy_small',lbl:'🧸 Игрушки маленькие'},
+    {key:'toy_big',lbl:'🎁 Игрушки большие'},
+    {key:'key',lbl:'🔑 Брелки'},
+    {key:'balls_strike',lbl:'🔵 Шары страйкб.'},
+    {key:'balls_air',lbl:'🎈 Шары надувные'},
+  ];
+  // FIX v9-9: показываем только позиции, допустимые для данной точки
+  const allowed = LOC_ITEMS[useLoc] || LOC_ITEMS['main'];
+  const items = allItems.filter(it => allowed.includes(it.key));
+  items.forEach(it => {
+    const val = stock[it.key];
+    const inc = pending[it.key]||0;
+    if(val!==undefined||inc>0) {
+      rows += `<div class="sm-row">
+        <span>${it.lbl}</span>
+        <span style="color:var(--text2)">${val!==undefined?val:'—'}${inc>0?` +${inc} приход`:''}</span>
+      </div>`;
+    }
+  });
+  if(!rows) rows = '<div style="color:var(--dim);font-size:14px">Нет данных</div>';
+  document.getElementById('sm-prev').innerHTML = rows;
+  // store loc for confirm
+  document.getElementById('shift-modal').dataset.loc = useLoc;
+  document.getElementById('shift-modal').classList.add('show');
+}
+
+function confirmShiftOpen() {
+  const loc = document.getElementById('shift-modal').dataset.loc || (CU.location==='Шарики+Уточки'?subLoc:CU.location);
+  const data = allData[enc(loc)]||{};
+  const stock = data?.stock||{};
+  const pending = data?.pending_stock||{};
+
+  // FIX v13-1: Закрытие смены — после автозаполнения полей счётчики
+//            правильно пересчитывают дельту (вызывается oninput событие).
+// FIX v13-2: Баннер pending_stock фильтрует позиции по типу точки —
+//            Тир больше не видит надувные шары и большие игрушки.
+// FIX v13-3: Журнал — добавлен фильтр по дате: Сегодня / Вчера / 7 дней / Все дни.
+// FIX v13-4: Обзор владельца — в таблице точек добавлена колонка «Смена»
+//            с именем оператора открывшего смену или «✗ закрыта».
+// FIX v12-1: Закрытие смены Тира — если счётчики уже вносились сегодня
+//            через вкладку Счётчики, повторный ввод при закрытии необязателен.
+//            Сообщение об ошибке теперь показывает конкретные незаполненные поля.
+// FIX v12-2: Поля закрытия смены не сбрасываются при обновлении данных Firebase
+//            или переключении вкладок — введённые значения сохраняются.
+// FIX v11-1: добавляем pending_stock к текущему stock перед сбросом
+  // v14 БЛОК 4: делаем атомарной через runTransaction — защита от:
+  //  1. Одновременного открытия смены двумя операторами
+  //  2. Потери pending_stock при перемещении в момент открытия
+  //  3. Двойного зачисления pending при двойном нажатии «✓ Всё верно»
+  const locRef = dbRef(locPath(loc));
+  runTransaction(locRef, cur => {
+    cur = cur || {};
+    // Если смена уже открыта (кто-то успел первым) — отменяем транзакцию
+    if(cur.shift && cur.shift.open === true) {
+      return; // return undefined отменяет транзакцию
+    }
+    // Зачисляем pending_stock → stock
+    const pend = cur.pending_stock || {};
+    cur.stock = cur.stock || {};
+    Object.entries(pend).forEach(([k,v])=>{
+      if(typeof v === 'number' && v > 0) cur.stock[k] = (cur.stock[k]||0) + v;
+    });
+    // Очищаем pending
+    cur.pending_stock = {};
+    // Открываем смену (ts поставит сервер после коммита — здесь пишем маркер)
+    cur.shift = {open:true, ts:{'.sv':'timestamp'}, op:CU.name};
+    return cur;
+  }).then(result => {
+    if(!result.committed) {
+      alert('Смена уже открыта другим оператором. Перезагрузите страницу.');
+      document.getElementById('shift-modal').classList.remove('show');
+      return;
+    }
+    // Записываем лог только если транзакция прошла. Если был pending — отдельная запись о приёме.
+    const pend = pending; // из snapshot перед транзакцией, для note в логе
+    const hasIncoming = Object.values(pend).some(v=>v>0);
+    if(hasIncoming) {
+      const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+      const note = Object.entries(pend).filter(([,v])=>v>0).map(([k,v])=>`${lbls[k]||k}: +${v}`).join(', ');
+      addLog({type:'stock_in', note:`Принято при открытии смены: ${note}`}, loc);
+    }
+    addLog({type:'shift_open', note:'Смена открыта · остатки подтверждены'}, loc);
+    document.getElementById('shift-modal').classList.remove('show');
+    renderAll();
+  }).catch(e => {
+    console.error('Ошибка транзакции открытия смены:', e);
+    alert('Не удалось открыть смену. Попробуйте ещё раз.');
+  });
+}
+window.confirmShiftOpen = confirmShiftOpen;
+
+function shiftDiscrepancy() {
+  const note = prompt('Опишите расхождение:');
+  if(note===null) return;
+  const loc = document.getElementById('shift-modal').dataset.loc || (CU.location==='Шарики+Уточки'?subLoc:CU.location);
+  // v14 БЛОК 4: такая же транзакция как в confirmShiftOpen, только с discrepancy
+  const data = allData[enc(loc)]||{};
+  const pending = data?.pending_stock||{};
+  const locRef = dbRef(locPath(loc));
+  runTransaction(locRef, cur => {
+    cur = cur || {};
+    if(cur.shift && cur.shift.open === true) return;
+    const pend = cur.pending_stock || {};
+    cur.stock = cur.stock || {};
+    Object.entries(pend).forEach(([k,v])=>{
+      if(typeof v === 'number' && v > 0) cur.stock[k] = (cur.stock[k]||0) + v;
+    });
+    cur.pending_stock = {};
+    cur.shift = {open:true, ts:{'.sv':'timestamp'}, op:CU.name, discrepancy:note};
+    return cur;
+  }).then(result => {
+    if(!result.committed) {
+      alert('Смена уже открыта другим оператором. Перезагрузите страницу.');
+      document.getElementById('shift-modal').classList.remove('show');
+      return;
+    }
+    addLog({type:'shift_open', note:`Смена открыта · РАСХОЖДЕНИЕ: ${note}`}, loc);
+    document.getElementById('shift-modal').classList.remove('show');
+    renderAll();
+  }).catch(e => {
+    console.error('Ошибка транзакции открытия смены:', e);
+    alert('Не удалось открыть смену. Попробуйте ещё раз.');
+  });
+}
+window.shiftDiscrepancy = shiftDiscrepancy;
+
+// ══════════════════════════════════════════════════════════
+// FLASH — лёгкое мгновенное уведомление без блокировки (для Шариков)
+function showFlash(msg) {
+  let el = document.getElementById('flash-msg');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'flash-msg';
+    el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:14px 28px;border-radius:14px;font-size:17px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.2)';
+    document.body.appendChild(el);
+  }
+  el.textContent = '✓ ' + msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.opacity='0'; }, 2000);
+}
+// TOAST
+// ══════════════════════════════════════════════════════════
+function showToast(entry, label) {
+  pendingEntry = entry;
+  toastSec = TOAST_SEC;
+  document.getElementById('toast-lbl').textContent = label;
+  document.getElementById('toast-timer').textContent = toastSec;
+  document.getElementById('toast-fill').style.width = '100%';
+  document.getElementById('toast').classList.add('show');
+  disablePrizeBtns(true);
+  clearInterval(toastTmr);
+  toastTmr = setInterval(() => {
+    toastSec--;
+    document.getElementById('toast-timer').textContent = toastSec;
+    document.getElementById('toast-fill').style.width = (toastSec/TOAST_SEC*100)+'%';
+    if(toastSec<=0) toastOk();
+  }, 1000);
+}
+
+function toastOk() {
+  clearInterval(toastTmr);
+  document.getElementById('toast').classList.remove('show');
+  disablePrizeBtns(false);
+  if(!pendingEntry) return;
+  commitEntry(pendingEntry);
+  pendingEntry = null;
+}
+window.toastOk = toastOk;
+
+function toastNo() {
+  clearInterval(toastTmr);
+  document.getElementById('toast').classList.remove('show');
+  disablePrizeBtns(false);
+  if(!pendingEntry) return;
+  let what = typeLabel(pendingEntry.type);
+  addLog({type:'cancel', note:`Отмена: ${what}`});
+  pendingEntry = null;
+}
+window.toastNo = toastNo;
+
+function disablePrizeBtns(val) {
+  ['btn-toy','btn-key','btn-big','btn-small','btn-duck','btn-ball-confirm'].forEach(id => {
+    const b = document.getElementById(id); if(b) b.disabled = val;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// LOG ENTRIES
+// ══════════════════════════════════════════════════════════
+function mkEntry(type, extra={}) {
+  // FIX v11-4: для комбо-оператора Шарики+Уточки используем subLoc как реальную локацию
+  const effectiveLoc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  // v14: ts — серверное время Firebase. Клиент не может его подделать.
+  // date/time больше не хранятся — вычисляются из ts при отображении через fmtDate/fmtTime.
+  return {type, ts:serverTimestamp(), op:CU.name, loc:effectiveLoc, ...extra};
+}
+
+function addLog(fields, customLoc) {
+  const lp = customLoc ? locPath(customLoc) : locPath();
+  push(dbRef(`${lp}/log`), {...mkEntry(fields.type), ...fields});
+}
+
+function commitEntry(entry) {
+  const lp = locPath(entry._loc||null);
+  push(dbRef(`${lp}/log`), entry);
+  // auto deduct stock
+  const stock = (allData[enc(entry._loc||CU.location)]||{}).stock||{};
+  const upd = {};
+  if(entry.type==='toy' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='key_given' && stock.key>0) upd.key = stock.key-1;
+  if(entry.type==='toy_small' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='toy_big' && stock.toy_big>0) upd.toy_big = stock.toy_big-1;
+  if(entry.type==='duck_prize' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+  if(entry.type==='ball_prize') {
+    if(entry.prize==='toy_big' && stock.toy_big>0) upd.toy_big = stock.toy_big-1;
+    else if(entry.prize==='toy_small' && stock.toy_small>0) upd.toy_small = stock.toy_small-1;
+    else if(entry.prize==='key' && stock.key>0) upd.key = stock.key-1;
+  }
+  if(Object.keys(upd).length) update(dbRef(`${lp}/stock`), upd);
+}
+
+function typeLabel(type) {
+  const map = {toy:'Игрушка (тир)',key_given:'Брелок',toy_small:'Маленькая игрушка',toy_big:'Большая игрушка',duck_prize:'Приз уточки',ball_prize:'Приз (шарики)',own_game:'Своя игра',no_prize:'Без приза',cancel:'Отмена',shift_open:'Открытие смены',shift_close:'Закрытие смены',counters:'Счётчики',payment:'Оплаты KitPos',stock_in:'Приход склад',stock_out:'Выдача на точку',inventory:'Инвентаризация'};
+  return map[type]||type;
+}
+
+// ══════════════════════════════════════════════════════════
+// PRIZE ACTIONS
+// ══════════════════════════════════════════════════════════
+function givePrize(type, extra={}) {
+  const labels = {toy:'🧸 Игрушка записана', key_given:'🔑 Брелок записан', toy_small:'🧸 Маленькая игрушка', toy_big:'🎁 Большая игрушка', duck_prize:'🧸 Приз уточки'};
+  // FIX 8: warn if stock is zero
+  const stock = locData?.stock || {};
+  const stockMap = {toy:'toy_small', key_given:'key', toy_small:'toy_small', toy_big:'toy_big', duck_prize:'toy_small'};
+  const stockKey = stockMap[type];
+  if(stockKey && stock[stockKey] !== undefined && stock[stockKey] <= 0) {
+    if(!confirm(`⚠ На складе 0 единиц (${stockKey === 'toy_small' ? 'маленьких игрушек' : stockKey === 'toy_big' ? 'больших игрушек' : 'брелков'})!\nЗаписать выдачу всё равно?`)) return;
+  }
+  const entry = mkEntry(type, extra);
+  showToast(entry, `${labels[type]||type} — подтвердите (${TOAST_SEC} сек)`);
+}
+window.givePrize = givePrize;
+
+// Own game modal
+function openOwnModal() {
+  // FIX v9-10: не открывать модалку если смена закрыта
+  const loc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  const shift = (allData[enc(loc)]||{})?.shift;
+  if(!shift?.open) { alert('Сначала откройте смену'); return; }
+  // v14 БЛОК 5: сброс состояния модалки при каждом открытии
+  resetOwnModal();
+  document.getElementById('own-modal').classList.add('show');
+}
+window.openOwnModal = openOwnModal;
+function closeOwnModal() {
+  document.getElementById('own-modal').classList.remove('show');
+  resetOwnModal();
+}
+window.closeOwnModal = closeOwnModal;
+
+// v14 БЛОК 5: сброс полей модалки — очистка выбора, скрытие поля ввода
+function resetOwnModal() {
+  const wrap = document.getElementById('own-other-wrap');
+  const text = document.getElementById('own-other-text');
+  const btn  = document.getElementById('own-confirm-btn');
+  const bPrac = document.getElementById('own-btn-practice');
+  const bOth  = document.getElementById('own-btn-other');
+  if(wrap) wrap.style.display = 'none';
+  if(text) text.value = '';
+  if(btn)  { btn.style.display = 'none'; btn.disabled = false; }
+  if(bPrac) bPrac.classList.remove('selected');
+  if(bOth)  bOth.classList.remove('selected');
+}
+
+// v14 БЛОК 5: Пристрелка / наладка — записывается сразу через Toast без комментария
+function selectReasonPractice() {
+  closeOwnModal();
+  const entry = mkEntry('own_game', {reason:'target_practice', note:'Пристрелка / наладка'});
+  showToast(entry, '🎮 Своя игра (Пристрелка) — подтвердите');
+}
+window.selectReasonPractice = selectReasonPractice;
+
+// v14 БЛОК 5: Другое — показываем поле для обязательного комментария
+function selectReasonOther() {
+  document.getElementById('own-btn-practice').classList.remove('selected');
+  document.getElementById('own-btn-other').classList.add('selected');
+  document.getElementById('own-other-wrap').style.display = 'block';
+  const btn = document.getElementById('own-confirm-btn');
+  btn.style.display = '';
+  btn.disabled = true; // заблокирована пока не введут >=3 символов
+  const txt = document.getElementById('own-other-text');
+  if(txt) { txt.value = ''; setTimeout(()=>txt.focus(), 50); }
+}
+window.selectReasonOther = selectReasonOther;
+
+// v14 БЛОК 5: обновление статуса кнопки Записать при вводе комментария
+function updateOwnConfirmBtn() {
+  const txt = document.getElementById('own-other-text')?.value.trim() || '';
+  const btn = document.getElementById('own-confirm-btn');
+  if(btn) btn.disabled = txt.length < 3;
+}
+window.updateOwnConfirmBtn = updateOwnConfirmBtn;
+
+// v14 БЛОК 5: подтверждение кнопки «Записать» для причины «Другое»
+function confirmOwnReason() {
+  const txt = document.getElementById('own-other-text')?.value.trim() || '';
+  if(txt.length < 3) { alert('Опишите причину (минимум 3 символа)'); return; }
+  closeOwnModal();
+  const entry = mkEntry('own_game', {reason:'other', note:txt});
+  showToast(entry, `🎮 Своя игра (${txt.slice(0,30)}${txt.length>30?'…':''}) — подтвердите`);
+}
+window.confirmOwnReason = confirmOwnReason;
+
+// No prize (Шарики rare case)
+function giveNoPrize() {
+  const entry = mkEntry('no_prize', {note: 'Без приза'});
+  showToast(entry, '🎮 Без приза — подтвердите');
+}
+window.giveNoPrize = giveNoPrize;
+
+// Ball numpad — FIX v9-14: строковый ввод, диапазон 0–10
+// Поддерживает ввод 1–9 одной цифрой и 10 двумя (1 затем 0)
+let ballStr = '0';
+function numpad(n) {
+  if(n==='del') {
+    ballStr = ballStr.length>1 ? ballStr.slice(0,-1) : '0';
+  } else {
+    const next = ballStr==='0' ? String(n) : ballStr+n;
+    const val = parseInt(next);
+    if(val > 10) return; // не даём ввести больше 10
+    ballStr = next;
+  }
+  ballCount = parseInt(ballStr)||0;
+  renderBallInput();
+}
+window.numpad = numpad;
+
+function renderBallInput() {
+  const el = document.getElementById('ball-num'); if(!el) return;
+  el.textContent = ballCount;
+  const prizes = locData?.prizes||{toy_big:10,toy_small:9};
+  let prize='', prizeLabel='', prizeType='';
+  if(ballCount>=prizes.toy_big){ prize='🎁'; prizeLabel='БОЛЬШАЯ ИГРУШКА'; prizeType='toy_big'; }
+  else if(ballCount>=prizes.toy_small){ prize='🧸'; prizeLabel='МАЛЕНЬКАЯ ИГРУШКА'; prizeType='toy_small'; }
+  else if(ballCount>=1){ prize='🔑'; prizeLabel='БРЕЛОК'; prizeType='key'; }
+  else { prize='—'; prizeLabel='введите результат'; prizeType=''; }
+  const pl = document.getElementById('ball-prize');
+  if(pl) pl.textContent = ballCount>0 ? `${prize} ${prizeLabel}` : prizeLabel;
+  const btn = document.getElementById('btn-ball-confirm');
+  if(btn) { btn.dataset.prizetype = prizeType; btn.disabled = ballCount===0; }
+}
+
+function confirmBall() {
+  const btn = document.getElementById('btn-ball-confirm');
+  const pt = btn?.dataset.prizetype;
+  if(!pt) return;
+  // Проверка склада
+  const stock = locData?.stock || {};
+  const stockKey = pt==='toy_big'?'toy_big':pt==='toy_small'?'toy_small':'key';
+  const stockName = pt==='toy_big'?'больших игрушек':pt==='toy_small'?'маленьких игрушек':'брелков';
+  if((stock[stockKey]||0) <= 0) {
+    if(!confirm(`⚠ На складе 0 ${stockName}!\nЗаписать выдачу всё равно?`)) return;
+  }
+  // FIX v9-14: без Toast — оператор уже осознанно ввёл число и нажал кнопку
+  const entry = mkEntry('ball_prize', {balls:ballCount, prize:pt});
+  commitEntry(entry);
+  // показываем краткое визуальное подтверждение без блокировки
+  let label = '🔑 Брелок';
+  if(pt==='toy_big') label='🎁 Большая игрушка';
+  else if(pt==='toy_small') label='🧸 Маленькая игрушка';
+  showFlash(`${label} — записано (${ballCount} шаров)`);
+  ballCount = 0; ballStr = '0';
+  renderBallInput();
+  renderAll();
+}
+window.confirmBall = confirmBall;
+
+// ══════════════════════════════════════════════════════════
+// COUNTERS
+// ══════════════════════════════════════════════════════════
+function saveCounters() {
+  const upd = {};
+  let saved = 0;
+  MACHINES.forEach(m => {
+    const v = parseInt(document.getElementById(`ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0) { upd[`counters/${m}`]={prev:v,prevTs:serverTimestamp()}; saved++; }
+  });
+  if(!saved){alert('Введите показания хотя бы одного автомата');return;}
+  update(dbRef(locPath()), upd);
+  addLog({type:'counters', note:`Счётчики сохранены (${saved} авт.)`});
+  MACHINES.forEach(m=>{const el=document.getElementById(`ctr-${m}`);if(el)el.value='';});
+  alert(`✓ Сохранено`);
+}
+window.saveCounters = saveCounters;
+
+function updateDiff(m) {
+  const inp = document.getElementById(`ctr-${m}`);
+  const dif = document.getElementById(`ctr-diff-${m}`);
+  if(!inp||!dif) return;
+  const v = parseInt(inp.value);
+  const prev = locData?.counters?.[m]?.prev;
+  if(!isNaN(v)&&v>=0&&prev!==undefined) {
+    const d = v-prev;
+    dif.textContent = (d>=0?'+':'')+d;
+    dif.style.color = d<0?'var(--red)':'var(--green)';
+  } else dif.textContent='—';
+}
+window.updateDiff = updateDiff;
+
+// ══════════════════════════════════════════════════════════
+// CLOSE SHIFT (inventory)
+// ══════════════════════════════════════════════════════════
+function prefillCloseShift() {
+  // FIX v11-1: КРИТИЧЕСКИЙ — confirmShiftOpen не добавлял pending_stock к stock.
+//            Товар перемещённый владельцем пропадал при открытии смены вместо
+//            того чтобы зачисляться на склад точки.
+// FIX v11-2: savePayments — принудительное обновление экрана после сохранения.
+//            Владелец теперь видит изменения сразу без ожидания Firebase onValue.
+// FIX v11-3: БЕЗОПАСНОСТЬ — свайп вниз позволял увидеть экран приложения
+//            под формой входа. login-screen теперь position:fixed, z-index:500.
+// FIX v11-4: КРИТИЧЕСКИЙ — mkEntry и locPath для комбо-оператора Шарики+Уточки
+//            писали данные в несуществующий путь 'locations/Шарики+Уточки'.
+//            Все призы, свои игры, оплаты — ничего не записывалось в Firebase.
+//            Теперь используется subLoc ('Шарики' или 'Уточки').
+// FIX v10-4: История операций точки — приходы на главный склад больше
+//            не отображаются в истории точки (только перемещения к/от точки).
+//            В карточке склада точки показывается баннер если есть pending_stock
+//            (товар перемещён владельцем, но ещё не принят оператором).
+// FIX v10-1: заполняем поля остатками из склада — оператор может скорректировать
+  const loc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  const s = (allData[enc(loc)]||{}).stock || {};
+  const fill = (id, val) => {
+    const el = document.getElementById(id);
+    // заполняем только если поле пустое и значение есть в базе
+    if(el && el.value==='' && val!==undefined) el.value = val;
+  };
+  fill('inv-toy_small',  s.toy_small);
+  fill('inv-toy_big',    s.toy_big);
+  fill('inv-key',        s.key);
+  fill('inv-balls_strike', s.balls_strike);
+  fill('inv-balls_air',  s.balls_air);
+  // Счётчики тира не заполняем — оператор вносит текущие показания сам
+  // FIX v13-1: тригерим пересчёт дельт для счётчиков если они уже заполнены
+  [1,2,3,4].forEach(m => {
+    const el = document.getElementById(`cs-ctr-${m}`);
+    if(el && el.value!=='') el.dispatchEvent(new Event('input'));
+  });
+}
+window.prefillCloseShift = prefillCloseShift;
+
+function closeShift() {
+  // FIX 3: always use current subLoc for Шарики+Уточки operator
+  const loc = CU.location==='Шарики+Уточки' ? subLoc : CU.location;
+  const isT = isTir(loc);
+  // collect inventory
+  const inv = {};
+  const fields = isT ? ['toy_small','key','balls_strike'] : isBall(loc) ? ['toy_small','toy_big','key','balls_air'] : ['toy_small'];
+  let allFilled = true;
+  fields.forEach(f => {
+    const el = document.getElementById(`inv-${f}`);
+    if(!el||el.value===''){allFilled=false;return;}
+    inv[f] = parseInt(el.value)||0;
+  });
+  // FIX v12-1: для тира счётчики — показать какое поле не заполнено
+  let missingFields = [];
+  fields.forEach(f => {
+    const el = document.getElementById(`inv-${f}`);
+    if(!el||el.value==='') {
+      const names={toy_small:'Игрушки маленькие',key:'Брелки',balls_strike:'Шары страйкб.',toy_big:'Игрушки большие',balls_air:'Шары надувные'};
+      missingFields.push(names[f]||f);
+    }
+  });
+  if(isT) {
+    let missingCtrs = [];
+    MACHINES.forEach(m=>{
+      const el=document.getElementById(`cs-ctr-${m}`);
+      if(!el||el.value==='') missingCtrs.push(`Автомат ${m}`);
+    });
+    // Счётчики обязательны только если нет сохранённых показаний за сегодня
+    const hasSavedCounters = Object.values((allData[enc(loc)]?.counters)||{})
+      .some(c=> dayKey(tsOf({ts:c.prevTs})) === todayKey());
+    if(missingCtrs.length > 0 && !hasSavedCounters) {
+      missingFields.push(...missingCtrs);
+    } else if(missingCtrs.length > 0 && hasSavedCounters) {
+      // Счётчики уже были сохранены сегодня — можно закрыть без повторного ввода
+    }
+  }
+  if(missingFields.length > 0){
+    alert('Заполните поля:\n• ' + missingFields.join('\n• '));
+    return;
+  }
+  // save inventory
+  const lp = locPath(loc);
+  update(dbRef(`${lp}/stock`), inv);
+  // readable inventory note
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const invNote=Object.entries(inv).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  addLog({type:'inventory', note:`Инвентаризация: ${invNote}`, loc}, loc);
+  if(isT) saveCountersFromClose();
+  // close shift
+  addLog({type:'shift_close', note:'Смена закрыта'}, loc);
+  update(dbRef(`${lp}/shift`), {open:false});
+  alert('Смена закрыта. Спасибо!');
+}
+window.closeShift = closeShift;
+
+function updateCsDiff(m) {
+  const inp = document.getElementById(`cs-ctr-${m}`);
+  const dif = document.getElementById(`cs-diff-${m}`);
+  if(!inp||!dif) return;
+  const v = parseInt(inp.value);
+  const prev = locData?.counters?.[m]?.prev;
+  if(!isNaN(v)&&v>=0&&prev!==undefined) {
+    const d = v-prev;
+    dif.textContent = (d>=0?'+':'')+d;
+    dif.style.color = d<0?'var(--red)':'var(--green)';
+  } else dif.textContent='—';
+}
+window.updateCsDiff = updateCsDiff;
+
+function saveCountersFromClose() {
+  const upd = {};
+  let saved = 0;
+  MACHINES.forEach(m => {
+    const v = parseInt(document.getElementById(`cs-ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0) { upd[`counters/${m}`]={prev:v,prevTs:serverTimestamp()}; saved++; }
+  });
+  if(saved) {
+    update(dbRef(locPath()), upd);
+    addLog({type:'counters', note:`Счётчики при закрытии смены (${saved} авт.)`});
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// OWNER: PAYMENTS
+// ══════════════════════════════════════════════════════════
+// v14 БЛОК 4: защита от двойного нажатия — флаг блокировки
+let _savingPayments = false;
+
+function savePayments(loc) {
+  // Защита от двойного нажатия: если уже сохраняем — игнорируем
+  if(_savingPayments) return;
+  const l = loc||ownerLoc;
+  const inp = document.getElementById('pay-inp');
+  const v = parseInt(inp?.value);
+  if(isNaN(v)||v<0){alert('Введите число');return;}
+  _savingPayments = true;
+  // Находим кнопку «Применить» и блокируем её на время операции
+  const payBtn = document.querySelector('#tab-overview .btn-primary');
+  if(payBtn) { payBtn.disabled = true; payBtn.style.opacity = '0.5'; }
+
+  const data = allData[enc(l)]||{};
+  const stock = data?.stock||{};
+
+  // v15: если выбран не-сегодня — пишем ретроспективную запись без списания склада
+  if(ownerDay) {
+    // Запрос подтверждения
+    if(!confirm(`Записать оплату ${v} за ${dayLabel(ownerDay)}?\n\nСклад брелков не будет пересчитан — это ретроспективная запись.`)) {
+      _savingPayments = false;
+      if(payBtn) { payBtn.disabled = false; payBtn.style.opacity = ''; }
+      return;
+    }
+    // Записываем в лог с forDate и флагом retro
+    const noteText = isTir(l)
+      ? `Оплат: ${v} · Ретроспективная запись за ${dayLabel(ownerDay)}`
+      : `Оплат: ${v} · Ретроспективная запись за ${dayLabel(ownerDay)}`;
+    push(dbRef(`${locPath(l)}/log`), {
+      ...mkEntry('payment', {note: noteText, count: v, retro: true, forDate: ownerDay})
+    });
+    const ps = document.getElementById('pay-saved');
+    if(ps) ps.textContent = `✓ Сохранено за ${dayLabel(ownerDay)}`;
+    setTimeout(()=>{
+      _savingPayments = false;
+      const btn = document.querySelector('#tab-overview .btn-primary');
+      if(btn) { btn.disabled = false; btn.style.opacity = ''; }
+      renderAll();
+    }, 500);
+    return;
+  }
+
+  // Обычная логика для сегодняшнего дня
+  update(dbRef(`${locPath(l)}/payments`), {ts:serverTimestamp(), count:v});
+
+  // FIX v9-15: брелки автоматически списываются только для Тира
+  // Для Шариков брелки выдаются оператором вручную (ball_prize → key)
+  // Для Уточек брелков нет вообще
+  if(isTir(l)) {
+    const toys = countType(data,'toy','toy_small');
+    const keys = Math.max(0,v-toys);
+    const oldPay = paymentsToday(data);
+    const oldToys = countType(data,'toy','toy_small');
+    const oldKeys = oldPay!==null ? Math.max(0,oldPay-oldToys) : 0;
+    let newKeyStock = (stock.key||0) + oldKeys - keys;
+    if(newKeyStock<0) newKeyStock=0;
+    update(dbRef(`${locPath(l)}/stock`), {key:newKeyStock});
+    push(dbRef(`${locPath(l)}/log`), mkEntry('payment',{note:`Оплат: ${v} · Брелков расчёт: ${keys}`, count:v}));
+    const ps = document.getElementById('pay-saved');
+    if(ps) ps.textContent=`✓ Сохранено · Брелков расчёт: ${keys}`;
+  } else if(isBall(l)) {
+    push(dbRef(`${locPath(l)}/log`), mkEntry('payment',{note:`Оплат: ${v}`, count:v}));
+    const ps = document.getElementById('pay-saved');
+    if(ps) ps.textContent=`✓ Сохранено`;
+  } else {
+    push(dbRef(`${locPath(l)}/log`), mkEntry('payment',{note:`Оплат: ${v}`, count:v}));
+    const ps = document.getElementById('pay-saved');
+    if(ps) ps.textContent=`✓ Сохранено`;
+  }
+  // FIX v11-2: принудительно обновляем allData и перерисовываем экран.
+  // Для UI используем локальный Date.now() — сервер всё равно перезапишет при onValue.
+  if(!allData[enc(l)]) allData[enc(l)]={};
+  allData[enc(l)].payments = {ts:Date.now(), count:v};
+  renderAll();
+
+  // Разблокируем кнопку через 3 секунды — защита от нечаянного двойного нажатия
+  setTimeout(()=>{
+    _savingPayments = false;
+    const btn = document.querySelector('#tab-overview .btn-primary');
+    if(btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }, 3000);
+}
+window.savePayments = savePayments;
+
+// ══════════════════════════════════════════════════════════
+// OWNER: STOCK
+// ══════════════════════════════════════════════════════════
+
+window.updateMoveItems = updateMoveItems;
+window.updateWriteOffItems = updateWriteOffItems;
+
+// ══════════════════════════════════════════════════════════
+// OPERATORS PANEL
+// ══════════════════════════════════════════════════════════
+function buildOperatorsPanel() {
+  const locOpts = [...LOCS,'Шарики+Уточки'].map(l=>`<option value="${l}">${l}</option>`).join('');
+  return `
+    <div class="sec-title">Операторы</div>
+    <div id="ops-list"></div>
+    <div class="card">
+      <h4>Добавить оператора</h4>
+      <div class="form-row"><label>Имя</label><input type="text" id="op-name" placeholder="Иван"></div>
+      <div class="form-row"><label>Точка</label><select id="op-loc">${locOpts}</select></div>
+      <div class="form-row"><label>Пароль</label><input type="text" id="op-pw" placeholder="1234"></div>
+      <button class="btn-primary" onclick="addOperator()">➕ Добавить</button>
+    </div>
+    <div class="card">
+      <h4>Начальные показания счётчиков</h4>
+      <div class="form-row"><label>Точка</label><select id="init-loc"><option value="Тир 1">Тир 1</option><option value="Тир 2">Тир 2</option></select></div>
+      ${MACHINES.map(m=>`<div class="form-row"><label>Автомат ${m}</label><input type="number" id="init-ctr-${m}" placeholder="например 11124" min="0" inputmode="numeric"></div>`).join('')}
+      <button class="btn-primary" onclick="saveInitCounters()">💾 Сохранить начальные</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS PANEL
+// ══════════════════════════════════════════════════════════
+function buildSettingsPanel() {
+  return `
+    <div class="card">
+      <h4>Правила призов</h4>
+      <div class="sec-title">Тир 1 и Тир 2</div>
+      <div class="form-row"><label>🧸 Игрушка — от (банок)</label><input type="number" id="s-tir-toy" value="20" min="1" inputmode="numeric"></div>
+      <div class="sec-title">Шарики</div>
+      <div class="form-row"><label>🎁 Большая игрушка — (шаров)</label><input type="number" id="s-ball-big" value="10" min="1" inputmode="numeric"></div>
+      <div class="form-row"><label>🧸 Маленькая — от (шаров)</label><input type="number" id="s-ball-small" value="9" min="1" inputmode="numeric"></div>
+      <button class="btn-primary" onclick="savePrizeRules()">💾 Сохранить правила</button>
+    </div>
+    <div class="card">
+      <h4>Мой пароль</h4>
+      <div class="form-row"><label>Новый пароль</label><input type="password" id="new-pw" placeholder="••••"></div>
+      <button class="btn-primary" onclick="saveOwnerPw()">🔒 Изменить</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// BUILD APP
+// ══════════════════════════════════════════════════════════
+function buildApp() {
+  document.getElementById('panels-wrap').style.display = '';
+  document.getElementById('hdr-sub').textContent = CU.role==='owner'?'Владелец':(CU.location||'');
+  const badge = document.getElementById('hdr-badge');
+  badge.textContent = CU.role==='owner'?'ВЛАДЕЛЕЦ':'ОПЕРАТОР';
+  badge.className = 'hdr-badge '+(CU.role==='owner'?'badge-ow':'badge-op');
+
+  if(CU.role==='operator') buildOperatorUI();
+  else buildOwnerUI();
+}
+
+function buildOperatorUI() {
+  const loc = CU.location;
+  const isBD = loc==='Шарики+Уточки';
+  const isT = isTir(loc);
+
+  // Shift banner
+  document.getElementById('shift-banner-wrap').innerHTML = `
+    <div class="shift-banner shift-closed" id="shift-banner">
+      <span id="shift-txt">Смена не открыта</span>
+      <button class="shift-action open" id="shift-btn" onclick="handleShift()">Открыть смену</button>
+    </div>`;
+
+  // Location switcher for Шарики+Уточки
+  if(isBD) {
+    document.getElementById('loc-switcher-wrap').innerHTML = `
+      <div class="loc-switcher">
+        <button class="loc-sw-btn active" id="sw-ball" onclick="switchSubLoc('Шарики',this)">🎈 Шарики</button>
+        <button class="loc-sw-btn" id="sw-duck" onclick="switchSubLoc('Уточки',this)">🦆 Уточки</button>
+      </div>`;
+  }
+
+  // Stats bar
+  buildStatsBar(loc);
+
+  // Tabs
+  const tabs = document.getElementById('tabs-wrap');
+  const panels = document.getElementById('panels-wrap');
+  tabs.innerHTML = '';
+  panels.innerHTML = '';
+
+  let tabsHTML = `<button class="tab-btn active" onclick="swTab('game',this)">🎯 Игра</button>`;
+  let panelsHTML = `<div class="panel active" id="tab-game">${buildGamePanel(loc)}</div>`;
+
+  if(isT) {
+    tabsHTML += `<button class="tab-btn" onclick="swTab('counters',this)">📟 Счётчики</button>`;
+    panelsHTML += `<div class="panel" id="tab-counters">${buildCountersPanel()}</div>`;
+  }
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('mystock',this)">📦 Мой склад</button>`;
+  panelsHTML += `<div class="panel" id="tab-mystock">${buildMyStockPanel()}</div>`;
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('mylog',this)">📋 Журнал</button>`;
+  panelsHTML += `<div class="panel" id="tab-mylog">${buildLogPanel(false)}</div>`;
+
+  tabsHTML += `<button class="tab-btn" onclick="swTab('close-shift',this)">🔒 Закрытие</button>`;
+  panelsHTML += `<div class="panel" id="tab-close-shift">${buildCloseShiftPanel(loc)}</div>`;
+
+  tabs.innerHTML = tabsHTML;
+  panels.innerHTML = panelsHTML;
+}
+
+function buildOwnerUI() {
+  document.getElementById('shift-banner-wrap').innerHTML = '';
+  document.getElementById('loc-switcher-wrap').innerHTML = '';
+
+  // Stats bar (owner sees selected location)
+  buildStatsBar(ownerLoc);
+
+  const tabs = document.getElementById('tabs-wrap');
+  const panels = document.getElementById('panels-wrap');
+
+  tabs.innerHTML = `
+    <button class="tab-btn active" onclick="swTab('overview',this)">📊 Обзор</button>
+    <button class="tab-btn" onclick="swTab('recon',this)">🔍 Сверка</button>
+    <button class="tab-btn" onclick="swTab('owlog',this)">📋 Журнал</button>
+    <button class="tab-btn" onclick="swTab('owstock',this)">📦 Склад</button>
+    <button class="tab-btn" onclick="swTab('operators',this)">👥 Операторы</button>
+    <button class="tab-btn" onclick="swTab('settings',this)">⚙️</button>
+  `;
+
+  panels.innerHTML = `
+    <div class="panel active" id="tab-overview">${buildOverviewPanel()}</div>
+    <div class="panel" id="tab-recon">${buildReconPanel()}</div>
+    <div class="panel" id="tab-owlog">${buildLogPanel(true)}</div>
+    <div class="panel" id="tab-owstock">${buildOwnerStockPanel()}</div>
+    <div class="panel" id="tab-operators">${buildOperatorsPanel()}</div>
+    <div class="panel" id="tab-settings">${buildSettingsPanel()}</div>
+  `;
+}
+
+function buildStatsBar(loc) {
+  // FIX 5: для комбо-оператора Шарики+Уточки используем subLoc, а не 'Шарики+Уточки'
+  const effectiveLoc = loc === 'Шарики+Уточки' ? subLoc : loc;
+  const data = allData[enc(effectiveLoc)]||{};
+  const tk = todayKey();
+  const todayEntries = Object.values(data?.log||{}).filter(e=>dayKey(tsOf(e))===tk);
+  const ballPrizeKeys = todayEntries.filter(e=>e.type==='ball_prize'&&e.prize==='key').length;
+  const ballPrizeToySmall = todayEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_small').length;
+  const ballPrizeToyBig = todayEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_big').length;
+  const toys = countType(data,'toy','toy_small','duck_prize') + ballPrizeToySmall; // FIX v9-13: включаем ball_prize toy_small
+  const keys = countType(data,'key_given') + ballPrizeKeys;
+  const big = countType(data,'toy_big') + ballPrizeToyBig;
+  const own = countType(data,'own_game');
+  const tech = countType(data,'no_prize');
+  const pay = paymentsToday(data);
+  // БЛОК 3' v14: для Тира показываем остаток брелков на складе («В коробке»),
+  // для Шариков/Уточек — количество выданных за смену (как раньше).
+  const isTirLoc = isTir(effectiveLoc);
+  const stockKey = data?.stock?.key;
+  const keysBlock = isTirLoc
+    ? `<div class="stat-item s-key"><div class="stat-val">${stockKey!==undefined?stockKey:'—'}</div><div class="stat-lbl">🔑 В коробке</div></div>`
+    : `<div class="stat-item s-key"><div class="stat-val">${keys}</div><div class="stat-lbl">🔑 Брелков</div></div>`;
+  document.getElementById('stats-bar-wrap').innerHTML = `
+    <div class="stats-bar">
+      <div class="stat-item s-toy"><div class="stat-val">${toys}</div><div class="stat-lbl">🧸 Игрушек</div></div>
+      ${big>0?`<div class="stat-item s-big"><div class="stat-val">${big}</div><div class="stat-lbl">🎁 Больших</div></div>`:''}
+      ${keysBlock}
+      <div class="stat-item s-own"><div class="stat-val">${own}</div><div class="stat-lbl">🎮 Своих</div></div>
+      ${pay!==null?`<div class="stat-item s-pay"><div class="stat-val">${pay}</div><div class="stat-lbl">💳 Оплат</div></div>`:''}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// GAME PANEL
+// ══════════════════════════════════════════════════════════
+function buildGamePanel(loc) {
+  const isT = isTir(loc);
+  const isBall2 = isBall(loc) || (loc==='Шарики+Уточки'&&subLoc==='Шарики');
+  const isDuck2 = isDuck(loc) || (loc==='Шарики+Уточки'&&subLoc==='Уточки');
+
+  let content = `<div class="warn-box" id="w-stock">⚠ Мало игрушек — сообщите владельцу!</div>`;
+
+  if(isT) {
+    content += `
+      <button class="prize-btn btn-toy" id="btn-toy" onclick="givePrize('toy')">
+        <span class="btn-emoji">🧸</span>
+        <div class="btn-text"><div class="btn-title">Выдал игрушку</div><div class="btn-sub">20 и более банок сбито</div></div>
+      </button>
+      <button class="prize-btn btn-own" onclick="openOwnModal()">
+        <span class="btn-emoji">🎮</span>
+        <div class="btn-text"><div class="btn-title">Своя игра</div><div class="btn-sub">Пристрелка, друг, сотрудник...</div></div>
+      </button>`;
+  } else if(isBall2) {
+    ballCount = 0; ballStr = '0'; // FIX v9-14: сброс при каждой перестройке панели
+    content += `
+      <div class="ball-result">
+        <div class="ball-lbl">Сколько шаров лопнул?</div>
+        <div class="ball-num" id="ball-num">0</div>
+        <div class="ball-prize" id="ball-prize">введите результат</div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="numpad(1)">1</button>
+        <button class="num-btn" onclick="numpad(2)">2</button>
+        <button class="num-btn" onclick="numpad(3)">3</button>
+        <button class="num-btn" onclick="numpad(4)">4</button>
+        <button class="num-btn" onclick="numpad(5)">5</button>
+        <button class="num-btn" onclick="numpad(6)">6</button>
+        <button class="num-btn" onclick="numpad(7)">7</button>
+        <button class="num-btn" onclick="numpad(8)">8</button>
+        <button class="num-btn" onclick="numpad(9)">9</button>
+        <button class="num-btn num-zero" onclick="numpad(0)">0</button>
+        <button class="num-btn num-del" onclick="numpad('del')">⌫</button>
+      </div>
+      <button class="prize-btn btn-big" id="btn-ball-confirm" onclick="confirmBall()" disabled>
+        <span class="btn-emoji">✓</span>
+        <div class="btn-text"><div class="btn-title">Выдать и записать</div></div>
+      </button>
+      <button class="prize-btn btn-own" onclick="giveNoPrize()" style="margin-top:8px">
+        <span class="btn-emoji">🎮</span>
+        <div class="btn-text"><div class="btn-title">Без приза</div><div class="btn-sub">Редкий случай — друг попросил</div></div>
+      </button>`;
+  } else if(isDuck2) {
+    content += `
+      <button class="prize-btn btn-duck" id="btn-duck" onclick="givePrize('duck_prize')">
+        <span class="btn-emoji">🧸</span>
+        <div class="btn-text"><div class="btn-title">Выдал приз</div><div class="btn-sub">Приз гарантирован всем игрокам</div></div>
+      </button>`;
+  }
+
+  // stock mini
+  content += `<div class="sec-title" style="margin-top:14px">Остаток на складе</div>
+    <div class="stock-mini" id="stock-mini"></div>`;
+
+  // recent
+  content += `<div class="recent-wrap"><div class="recent-hdr">Последние записи</div><div id="recent-log"></div></div>`;
+
+  return content;
+}
+
+// ══════════════════════════════════════════════════════════
+// COUNTERS PANEL
+// ══════════════════════════════════════════════════════════
+function buildCountersPanel() {
+  return `
+    <div class="card">
+      <h4>📟 Показания счётчиков</h4>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:12px" id="ctr-saved-time"></div>
+      ${MACHINES.map(m=>`
+      <div class="ctr-row">
+        <div class="ctr-info">
+          <div class="ctr-name">Автомат ${m}</div>
+          <div class="ctr-prev" id="ctr-prev-${m}">утро: —</div>
+        </div>
+        <input class="ctr-input" type="number" id="cs-ctr-${m}" placeholder="0" min="0" inputmode="numeric" oninput="updateCsDiff(${m})">
+        <div class="ctr-diff" id="cs-diff-${m}">—</div>
+      </div>`).join('')}
+      <div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-top:8px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">Итого игр: <span id="ctr-total" style="color:var(--gold)">—</span></div>
+        <div style="font-size:13px;color:var(--dim);margin-top:4px">Своих + техн.: <span id="ctr-own">0</span> | Реальных: <span id="ctr-real" style="color:var(--green)">—</span></div>
+      </div>
+      <button class="btn-primary" onclick="saveCounters()">💾 Сохранить показания</button>
+    </div>
+    <div class="card">
+      <h4>🔵 Шары страйкбольные</h4>
+      <div class="form-row"><label>Остаток сейчас (приблизительно)</label><input type="number" id="balls-now" placeholder="~3200" min="0" inputmode="numeric"></div>
+      <button class="btn-primary" onclick="saveBalls()">💾 Сохранить</button>
+    </div>`;
+}
+
+function saveBalls() {
+  const v = parseInt(document.getElementById('balls-now')?.value);
+  if(isNaN(v)){alert('Введите число');return;}
+  update(dbRef(`${locPath()}/stock`), {balls_strike:v});
+  addLog({type:'balls_update', note:`Шары страйкб.: ~${v} шт`});
+  alert('✓ Сохранено');
+}
+window.saveBalls = saveBalls;
+
+// ══════════════════════════════════════════════════════════
+// MY STOCK PANEL
+// ══════════════════════════════════════════════════════════
+function buildMyStockPanel() {
+  return `
+    <div class="sec-title">Текущие остатки</div>
+    <div id="my-stock-cards"></div>
+    <div class="sec-title">Операции сегодня</div>
+    <div id="my-stock-ops"></div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOSE SHIFT PANEL
+// ══════════════════════════════════════════════════════════
+function buildCloseShiftPanel(loc) {
+  // FIX 3: use current subLoc when building close-shift panel for Шарики+Уточки
+  const activeLoc = loc==='Шарики+Уточки' ? subLoc : loc;
+  const isT = isTir(activeLoc);
+  const isBall2 = isBall(activeLoc);
+  const isDuck2 = isDuck(activeLoc);
+
+  let fields = '';
+  if(isT) {
+    fields += `
+      <div class="form-row"><label>🧸 Игрушки маленькие (остаток)</label><input type="number" id="inv-toy_small" placeholder="45" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔑 Брелки (остаток)</label><input type="number" id="inv-key" placeholder="230" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔵 Шары страйкб. (остаток ~)</label><input type="number" id="inv-balls_strike" placeholder="~3200" min="0" inputmode="numeric"></div>
+      <div class="sec-title" style="margin-top:8px">Показания счётчиков</div>
+      ${MACHINES.map(m=>`
+      <div class="ctr-row">
+        <div class="ctr-info"><div class="ctr-name">Автомат ${m}</div><div class="ctr-prev" id="cs-prev-${m}">утро: —</div></div>
+        <input class="ctr-input" type="number" id="cs-ctr-${m}" placeholder="0" min="0" inputmode="numeric" oninput="updateCsDiff(${m})">
+        <div class="ctr-diff" id="cs-diff-${m}">—</div>
+      </div>`).join('')}`;
+  } else if(isBall2) {
+    fields += `
+      <div class="form-row"><label>🎁 Большие игрушки (остаток)</label><input type="number" id="inv-toy_big" placeholder="12" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🧸 Маленькие игрушки (остаток)</label><input type="number" id="inv-toy_small" placeholder="48" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🔑 Брелки (остаток)</label><input type="number" id="inv-key" placeholder="186" min="0" inputmode="numeric"></div>
+      <div class="form-row"><label>🎈 Шары надувные (остаток ~)</label><input type="number" id="inv-balls_air" placeholder="~45" min="0" inputmode="numeric"></div>`;
+  } else if(isDuck2) {
+    fields += `
+      <div class="form-row"><label>🧸 Игрушки (остаток)</label><input type="number" id="inv-toy_small" placeholder="6" min="0" inputmode="numeric"></div>`;
+  }
+
+  return `
+    <div class="card">
+      <h4>🔒 Закрытие смены — ${activeLoc}</h4>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Внесите фактические остатки. Без этого смена не закроется.
+      </div>
+      ${fields}
+      <button class="btn-primary" onclick="closeShift()" style="background:var(--red)">🔒 Закрыть смену</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// LOG PANEL
+// ══════════════════════════════════════════════════════════
+function buildLogPanel(isOwner) {
+  return `
+    <div class="filter-row">
+      <select class="filter-sel" id="log-date-filter" onchange="renderLog()" style="max-width:120px">
+        <option value="today">Сегодня</option>
+        <option value="yesterday">Вчера</option>
+        <option value="week">7 дней</option>
+        <option value="all">Все дни</option>
+      </select>
+      <select class="filter-sel" id="log-filter" onchange="renderLog()">
+        <option value="all">Все типы</option>
+        <option value="prize">Призы</option>
+        <option value="own">Свои игры</option>
+        <option value="cancel">Отмены</option>
+        <option value="shift">Смены</option>
+        <option value="stock">Склад</option>
+        ${isOwner?'<option value="payment">Оплаты KitPos</option>':''}
+      </select>
+      ${isOwner?`<select class="filter-sel" id="log-loc-filter" onchange="renderLog()" style="max-width:110px">
+        <option value="all">Все точки</option>
+        ${LOCS.map(l=>`<option value="${l}">${l}</option>`).join('')}
+      </select>`:''}
+    </div>
+    ${isOwner?'<button class="btn-export" onclick="exportCSV()">📥 Экспорт CSV</button>':''}
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th>Время</th><th>Дата</th><th>Тип</th>
+          ${isOwner?'<th>Точка</th><th>Оператор</th>':''}
+          <th>Детали</th>
+        </tr></thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+      <div id="log-empty" style="display:none;text-align:center;color:var(--dim);padding:24px;font-size:14px">Записей нет</div>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:var(--dim);padding:10px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+      📹 Время записей совпадает с камерой видеонаблюдения
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// OVERVIEW PANEL
+// ══════════════════════════════════════════════════════════
+function buildOverviewPanel() {
+  return `
+    <div id="ow-warns"></div>
+    <!-- v15: переключатель даты -->
+    <div class="day-switcher" id="ov-day-switcher">
+      <button class="day-btn active" data-day="today" onclick="switchOwDay('today',this)">Сегодня</button>
+      <button class="day-btn" data-day="yesterday" onclick="switchOwDay('yesterday',this)">Вчера</button>
+      <button class="day-btn" data-day="pick" onclick="pickOwDay(this)">📅 Дата</button>
+      <input type="date" id="ov-day-picker" style="display:none" onchange="onOwDayPicked(this)">
+    </div>
+    <div class="card">
+      <h4 id="ov-title">Все точки — сегодня</h4>
+      <div style="overflow-x:auto">
+        <table class="overview-table">
+          <thead><tr><th>Точка</th><th>Смена</th><th>Оплат</th><th>Призов</th><th>Ст.</th></tr></thead>
+          <tbody id="ov-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="loc-tabs" id="ov-loc-tabs">
+      ${LOCS.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchOwLoc('${l}',this)">${l}</div>`).join('')}
+    </div>
+    <div class="card" id="ov-detail">
+      <h4 id="ov-detail-title">Тир 1 — детали</h4>
+      <div class="kpi-grid" id="ov-kpi"></div>
+    </div>
+    <div class="card" id="ov-pay-card">
+      <h4 id="ov-pay-title">Ввести оплаты из KitPos</h4>
+      <div id="ov-pay-hint" style="font-size:13px;color:var(--dim);margin-bottom:10px">Личный кабинет KiT Vending → транзакции за сегодня</div>
+      <div id="ov-loc-name" style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
+      <div class="form-row"><input type="number" id="pay-inp" placeholder="0" min="0" inputmode="numeric" style="font-size:1.5rem;font-weight:700"></div>
+      <button class="btn-primary" onclick="savePayments()">✓ Применить · Списать брелки</button>
+      <div style="font-size:13px;color:var(--green);margin-top:8px;font-weight:600" id="pay-saved"></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// RECON PANEL
+// ══════════════════════════════════════════════════════════
+function buildReconPanel() {
+  return `
+    <div class="loc-tabs" id="recon-loc-tabs">
+      ${LOCS.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchReconLoc('${l}',this)">${l}</div>`).join('')}
+    </div>
+    <div class="card"><h4 id="recon-title">🔍 Сверка — Тир 1</h4><div id="recon-content"></div></div>
+    <div style="font-size:13px;color:var(--dim);padding:10px;background:var(--card);border-radius:8px;border:1px solid var(--border);line-height:1.7">
+      <strong style="color:var(--text)">Как читать:</strong><br>
+      Норма: оплаты = выданным призам<br>
+      <span style="color:var(--green)">✓ Совпадение — всё в порядке</span><br>
+      <span style="color:var(--red)">⚠ Расхождение — проверить камеры</span>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// OWNER STOCK PANEL
+// ══════════════════════════════════════════════════════════
+function buildOwnerStockPanel() {
+  const allLocs = ['Главный','Тир 1','Тир 2','Шарики','Уточки'];
+  const locOpts = ['Тир 1','Тир 2','Шарики','Уточки'].map(l=>`<option value="${l}">${l}</option>`).join('');
+  return `
+    <div class="loc-tabs" id="stock-loc-tabs">
+      ${allLocs.map((l,i)=>`<div class="loc-tab ${i===0?'active':''}" onclick="switchStockLoc('${l==='Главный'?'main':l}',this)">${l}</div>`).join('')}
+    </div>
+    <div id="stock-display"></div>
+    <div id="stock-log-wrap"></div>
+    <div class="card">
+      <h4>➕ Приход товара (главный склад)</h4>
+      ${ALL_ITEMS.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="si-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('')}
+      <button class="btn-primary" onclick="stockIn()">✓ Оприходовать</button>
+    </div>
+    <div class="card">
+      <h4>📤 Выдать / Переместить</h4>
+      <div class="form-row"><label>Откуда</label>
+        <select id="mv-from" onchange="updateMoveItems()">
+          <option value="main">Главный склад</option>${locOpts}
+        </select>
+      </div>
+      <div class="form-row"><label>Куда</label>
+        <select id="mv-to" onchange="updateMoveItems()">
+          <option value="">— выбрать —</option>${locOpts}
+          <option value="main">Главный склад</option>
+        </select>
+      </div>
+      <div id="mv-items"></div>
+      <button class="btn-primary" onclick="stockMove()">🔄 Переместить</button>
+    </div>
+    <div class="card">
+      <h4>🗑 Списание</h4>
+      <div class="form-row"><label>Со склада</label>
+        <select id="wr-from" onchange="updateWriteOffItems()">
+          <option value="main">Главный склад</option>${locOpts}
+        </select>
+      </div>
+      <div id="wr-items"></div>
+      <div class="form-row"><label>Причина</label><input type="text" id="wr-reason" placeholder="Брак, потеря..."></div>
+      <button class="btn-primary" onclick="stockWriteOff()" style="background:var(--red)">🗑 Списать</button>
+    </div>`;
+}
+
+function getLocItems(loc) {
+  const allowed = LOC_ITEMS[loc] || LOC_ITEMS['main'];
+  return ALL_ITEMS.filter(it => allowed.includes(it.k));
+}
+
+function updateMoveItems() {
+  const from = document.getElementById('mv-from')?.value || 'main';
+  const to   = document.getElementById('mv-to')?.value   || '';
+  // FIX 1: show only items valid for DESTINATION (куда), intersected with source items
+  const fromItems = getLocItems(from);
+  const toItems   = to ? getLocItems(to) : fromItems;
+  const items = to ? fromItems.filter(it => toItems.some(ti=>ti.k===it.k)) : fromItems;
+  const el = document.getElementById('mv-items');
+  if(!el) return;
+  if(items.length===0) {
+    el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Нет общих позиций для этого перемещения</div>';
+    return;
+  }
+  el.innerHTML = items.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="mv-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('');
+}
+
+function updateWriteOffItems() {
+  const from = document.getElementById('wr-from')?.value || 'main';
+  const items = getLocItems(from);
+  const el = document.getElementById('wr-items');
+  if(!el) return;
+  el.innerHTML = items.map(it=>`<div class="form-row"><label>${it.l}</label><input type="number" id="wr-${it.k}" placeholder="0" min="0" inputmode="numeric"></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// STOCK OPERATIONS
+// ══════════════════════════════════════════════════════════
+function stockIn() {
+  const items = ['toy_small','toy_big','key','balls_strike','balls_air'];
+  const values = {};
+  items.forEach(it => {
+    const el = document.getElementById(`si-${it}`);
+    if(!el) return;
+    const raw = el.value.trim();
+    if(raw==='') return;
+    const v = parseInt(raw);
+    if(!isNaN(v) && v > 0) values[it] = v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции (больше 0)');return;}
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: +${v}`).join(', ');
+  if(!confirm(`Оприходовать на главный склад?\n\n${summary}`)) return;
+  get(dbRef('main_stock')).then(snap=>{
+    const cur = snap.val()||{};
+    const upd = {};
+    Object.entries(values).forEach(([k,v])=>{ upd[k]=(cur[k]||0)+v; });
+    update(dbRef('main_stock'), upd);
+    push(dbRef('main_stock_log'), {ts:serverTimestamp(),op:CU.name,type:'in',values,note:`Приход: ${summary}`});
+    alert('✓ Приход оприходован!');
+    items.forEach(it=>{const el=document.getElementById(`si-${it}`);if(el)el.value='';});
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+  });
+}
+window.stockIn = stockIn;
+
+function stockMove() {
+  const from = document.getElementById('mv-from')?.value;
+  const to = document.getElementById('mv-to')?.value;
+  if(!to){alert('Выберите куда переместить');return;}
+  if(from===to){alert('Откуда и куда одинаковые');return;}
+  // Read only items that are rendered in mv-items div
+  const values = {};
+  ALL_ITEMS.forEach(it=>{
+    const el=document.getElementById(`mv-${it.k}`);
+    if(!el) return;
+    const raw=el.value.trim();
+    if(raw==='') return;
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>0) values[it.k]=v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции');return;}
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  const fromName=from==='main'?'Главный склад':from;
+  const toName=to==='main'?'Главный склад':to;
+  if(!confirm(`Переместить с "${fromName}" на "${toName}"?\n\n${summary}`)) return;
+
+  const fromRef = from==='main' ? dbRef('main_stock') : dbRef(`${locPath(from)}/stock`);
+  // Приёмник:
+  //  - на главный склад → сразу в stock
+  //  - на точку → в pending_stock (оператор примет при открытии смены)
+  const toRef = to==='main'
+    ? dbRef('main_stock')
+    : dbRef(`${locPath(to)}/pending_stock`);
+
+  // v14 БЛОК 4: две независимые транзакции (разные локации — гонки между ними нет)
+  // runTransaction защищает от конкурентных изменений КАЖДОГО склада отдельно.
+  const txFrom = runTransaction(fromRef, cur => {
+    cur = cur || {};
+    Object.entries(values).forEach(([k,v])=>{
+      cur[k] = Math.max(0, (cur[k]||0) - v);
+    });
+    return cur;
+  });
+  const txTo = runTransaction(toRef, cur => {
+    cur = cur || {};
+    Object.entries(values).forEach(([k,v])=>{
+      cur[k] = (cur[k]||0) + v;
+    });
+    return cur;
+  });
+
+  Promise.all([txFrom, txTo]).then(([resFrom, resTo])=>{
+    if(!resFrom.committed || !resTo.committed) {
+      alert('Не удалось выполнить перемещение. Попробуйте ещё раз.');
+      return;
+    }
+    const logNote=`Перемещение ${fromName}→${toName}: ${summary}`;
+    push(dbRef('main_stock_log'),{ts:serverTimestamp(),op:CU.name,type:'move',note:logNote,values,from:fromName,to:toName});
+    if(from!=='main') push(dbRef(`${locPath(from)}/log`),mkEntry('stock_out',{note:`Перемещено на ${toName}: ${summary}`}));
+    if(to!=='main')   push(dbRef(`${locPath(to)}/log`),mkEntry('stock_out',{note:`Получено с ${fromName}: ${summary}`}));
+
+    alert(`✓ Перемещено с ${fromName} на ${toName}!`);
+    ALL_ITEMS.forEach(it=>{const el=document.getElementById(`mv-${it.k}`);if(el)el.value='';});
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+    else renderLocStock(stockLoc);
+  }).catch(e=>{
+    console.error('Ошибка транзакции перемещения:', e);
+    alert('Ошибка перемещения: '+e.message);
+  });
+}
+window.stockMove = stockMove;
+
+function stockOut() {
+  stockMove();
+}
+window.stockOut = stockOut;
+
+function stockWriteOff() {
+  const from = document.getElementById('wr-from')?.value||'main';
+  const items = ['toy_small','toy_big','key','balls_strike','balls_air'];
+  const values = {};
+  items.forEach(it=>{
+    const el=document.getElementById(`wr-${it}`);
+    if(!el) return;
+    const raw=el.value.trim();
+    if(raw==='') return;
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>0) values[it]=v;
+  });
+  if(!Object.keys(values).length){alert('Введите количество хотя бы одной позиции');return;}
+  const reason=document.getElementById('wr-reason')?.value.trim()||'Не указана';
+  const lbls={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+  const summary=Object.entries(values).map(([k,v])=>`${lbls[k]||k}: ${v}`).join(', ');
+  const fromName=from==='main'?'Главный склад':from;
+  if(!confirm(`Списать с "${fromName}"?\n\n${summary}\nПричина: ${reason}`)) return;
+
+  const stockRef = from==='main' ? dbRef('main_stock') : dbRef(`${locPath(from)}/stock`);
+  get(stockRef).then(snap=>{
+    const cur=snap.val()||{};
+    const upd={};
+    Object.entries(values).forEach(([k,v])=>{ upd[k]=Math.max(0,(cur[k]||0)-v); });
+    update(stockRef,upd);
+    const logNote=`Списание с ${fromName}: ${summary}. Причина: ${reason}`;
+    push(dbRef('main_stock_log'),{ts:serverTimestamp(),op:CU.name,type:'writeoff',note:logNote,values,from:fromName,reason});
+    if(from!=='main') push(dbRef(`${locPath(from)}/log`),mkEntry('stock_out',{note:logNote}));
+    alert('✓ Списание выполнено!');
+    items.forEach(it=>{const el=document.getElementById(`wr-${it}`);if(el)el.value='';});
+    const re=document.getElementById('wr-reason');if(re)re.value='';
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+    else renderLocStock(stockLoc);
+  });
+}
+window.stockWriteOff = stockWriteOff;
+
+// ══════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════
+function renderAll() {
+  const loc = CU.role==='operator' ? (CU.location==='Шарики+Уточки'?subLoc:CU.location) : ownerLoc;
+  const data = allData[enc(loc)]||{};
+  locData = data;
+  buildStatsBar(loc);
+  renderShiftBanner();
+  renderRecent(data);
+  renderStockMini(data);
+  renderCounterLabels(data);
+  renderMyStock(data);
+  renderMyStockOps(data);
+  if(CU.role==='owner') { renderOverview(); renderRecon(); renderOvDetail(data); renderOps(); }
+}
+
+function renderShiftBanner() {
+  if(CU.role!=='operator') return;
+  // FIX 3: always use subLoc for Шарики+Уточки
+  const loc = CU.location==='Шарики+Уточки'?subLoc:CU.location;
+  const data = allData[enc(loc)]||{};
+  const shift = data?.shift;
+  const banner=document.getElementById('shift-banner');
+  const txt=document.getElementById('shift-txt');
+  const btn=document.getElementById('shift-btn');
+  if(!banner) return;
+  const isOpen = !!shift?.open;
+  if(isOpen) {
+    banner.className='shift-banner shift-open';
+    txt.textContent=`✓ Смена открыта · ${fmtTimeShort(shift.ts)}`;
+    btn.textContent='Закрыть смену'; btn.className='shift-action close';
+  } else {
+    banner.className='shift-banner shift-closed';
+    txt.textContent='Смена не открыта — выдача призов заблокирована';
+    btn.textContent='Открыть смену'; btn.className='shift-action open';
+  }
+  // Block/unblock all prize buttons based on shift state
+  const prizeIds = ['btn-toy','btn-key','btn-ball-confirm','btn-duck'];
+  prizeIds.forEach(id => {
+    const b = document.getElementById(id);
+    if(b) b.disabled = !isOpen;
+  });
+  // FIX v9-10: Block ALL prize-btn including "Своя игра" (has no id) when shift is closed
+  document.querySelectorAll('.prize-btn').forEach(b => {
+    if(b.id==='btn-ball-confirm') return; // handled separately above
+    b.disabled = !isOpen;
+  });
+}
+
+function renderRecent(data) {
+  const el=document.getElementById('recent-log'); if(!el) return;
+  const items=Object.values(data?.log||{}).sort((a,b)=>tsOf(b)-tsOf(a)).slice(0,5);
+  if(!items.length){el.innerHTML='<div class="ri-empty">Нет записей</div>';return;}
+  el.innerHTML=items.map(e=>{
+    const cls={toy:'ri-toy',key_given:'ri-key',toy_small:'ri-toy',toy_big:'ri-big',duck_prize:'ri-toy',ball_prize:'ri-big',own_game:'ri-own',no_prize:'ri-own',cancel:'ri-cancel',shift_open:'ri-shift',shift_close:'ri-shift'}[e.type]||'';
+    return `<div class="recent-item fade-in"><span class="ri-time">${fmtTime(e.ts)}</span><span class="ri-type ${cls}">${typeLabel(e.type)}${e.note&&!e.note.includes('{')?` — ${e.note}`:''}</span></div>`;
+  }).join('');
+}
+
+function renderStockMini(data) {
+  const el=document.getElementById('stock-mini'); if(!el) return;
+  const s=data?.stock||{};
+  const loc=CU?.location==='Шарики+Уточки'?subLoc:(CU?.location||'main');
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const warn=document.getElementById('w-stock');
+  if(warn) warn.classList.toggle('show',(s.toy_small!==undefined&&s.toy_small<=3));
+  const pills=[];
+  if(allowed.includes('toy_small')&&s.toy_small!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-toy">${s.toy_small}</div><div class="sp-lbl">🧸 Маленьких</div></div>`);
+  if(allowed.includes('toy_big')&&s.toy_big!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-big">${s.toy_big}</div><div class="sp-lbl">🎁 Больших</div></div>`);
+  if(allowed.includes('key')&&s.key!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-key">${s.key}</div><div class="sp-lbl">🔑 Брелков</div></div>`);
+  if(allowed.includes('balls_strike')&&s.balls_strike!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-ball">~${s.balls_strike}</div><div class="sp-lbl">🔵 Шаров</div></div>`);
+  if(allowed.includes('balls_air')&&s.balls_air!==undefined) pills.push(`<div class="stock-pill"><div class="sp-val sp-ball">~${s.balls_air}</div><div class="sp-lbl">🎈 Надув.</div></div>`);
+  el.innerHTML=pills.join('');
+}
+
+function renderCounterLabels(data) {
+  const counters=data?.counters||{};
+  let total=0; let hasAll=true;
+  MACHINES.forEach(m=>{
+    const pl=document.getElementById(`ctr-prev-${m}`);
+    const c=counters[m]||{};
+    if(pl) pl.textContent=c.prev!==undefined?`утро: ${c.prev}${c.prevTs?` (${fmtTimeShort(c.prevTs)})`:''}` :'утро: —';
+    const inp=document.getElementById(`ctr-${m}`);
+    const v=parseInt(inp?.value);
+    if(!isNaN(v)&&v>=0&&c.prev!==undefined) total+=v-c.prev; else hasAll=false;
+    updateDiff(m);
+  });
+  if(hasAll) {
+    const el=document.getElementById('ctr-total'); if(el)el.textContent=total;
+    const tl=todayLog(data);
+    const ownCnt=tl.filter(l=>l.type==='own_game'||l.type==='no_prize').length;
+    const oel=document.getElementById('ctr-own'); if(oel)oel.textContent=ownCnt;
+    const rel=document.getElementById('ctr-real'); if(rel)rel.textContent=total-ownCnt;
+  }
+  // close-shift panel prev labels
+  if(document.getElementById('cs-prev-1')) {
+    MACHINES.forEach(m=>{
+      const pl=document.getElementById(`cs-prev-${m}`);
+      const c=counters[m]||{};
+      if(pl) pl.textContent=c.prev!==undefined?`утро: ${c.prev}${c.prevTs?` (${fmtTimeShort(c.prevTs)})`:''}`:'утро: —';
+      updateCsDiff(m);
+    });
+  }
+}
+
+function renderMyStock(data) {
+  const el=document.getElementById('my-stock-cards'); if(!el) return;
+  const s=data?.stock||{};
+  const loc=CU?.location==='Шарики+Уточки'?subLoc:(CU?.location||'main');
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const allItemDefs=[
+    {key:'toy_small',ico:'🧸',name:'Игрушки маленькие',cls:'sc-toy'},
+    {key:'toy_big',ico:'🎁',name:'Игрушки большие',cls:'sc-big'},
+    {key:'key',ico:'🔑',name:'Брелки',cls:'sc-key'},
+    {key:'balls_strike',ico:'🔵',name:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {key:'balls_air',ico:'🎈',name:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  const items=allItemDefs.filter(it=>allowed.includes(it.key));
+  // FIX v10-2: если склад полностью пуст — показать подсказку
+  const hasAnyStock = items.some(it => s[it.key] !== undefined);
+  if(!hasAnyStock) {
+    el.innerHTML = `<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;color:var(--dim);font-size:14px">
+      📦 Товар на точку ещё не поступал<br>
+      <span style="font-size:12px">Попросите владельца переместить товар со склада</span>
+    </div>`;
+    return;
+  }
+  el.innerHTML=items.map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info">
+        <div class="sc-name">${it.name}</div>
+        <div class="sc-cnt ${it.cls}">${s[it.key]!==undefined?(it.approx?'~':'')+s[it.key]+' шт':'—'}</div>
+        ${(s[it.key]!==undefined&&s[it.key]<=3)?'<div class="sc-warn">⚠ Критически мало!</div>':''}
+      </div>
+    </div>`).join('');
+}
+
+function renderMyStockOps(data) {
+  const el=document.getElementById('my-stock-ops'); if(!el) return;
+  const ops=todayLog(data).filter(l=>['stock_out','stock_in','inventory','balls_update'].includes(l.type));
+  if(!ops.length){el.innerHTML='<div style="color:var(--dim);font-size:14px;padding:8px">Нет операций сегодня</div>';return;}
+  el.innerHTML=ops.slice(0,10).map(e=>{
+    let note=e.note||'';
+    note=note.replace(/\{[^}]+\}/g,'').trim();
+    if(!note) note=typeLabel(e.type);
+    return `<div class="recent-item"><span class="ri-time">${fmtTime(e.ts)}</span><span class="ri-type ri-shift">${typeLabel(e.type)}</span><span style="font-size:13px;color:var(--dim);flex:1">${note}</span></div>`;
+  }).join('');
+}
+
+function renderLog() {
+  const tbody=document.getElementById('log-tbody'); if(!tbody) return;
+  const filter=document.getElementById('log-filter')?.value||'all';
+  const locF=document.getElementById('log-loc-filter')?.value||'all';
+  const dateF=document.getElementById('log-date-filter')?.value||'today';
+  const isOwner=CU?.role==='owner';
+  let entries=[];
+  if(isOwner) {
+    Object.entries(allData).forEach(([lk,ld])=>{
+      const ln=LOCS.find(l=>enc(l)===lk)||lk;
+      Object.values(ld?.log||{}).forEach(e=>entries.push({...e,_loc:ln}));
+    });
+  } else entries=Object.values(locData?.log||{});
+  entries.sort((a,b)=>tsOf(b)-tsOf(a));
+  // v14: фильтр по дате через dayKey (MSK)
+  if(dateF==='today') {
+    const tk = todayKey();
+    entries=entries.filter(e=>dayKey(tsOf(e))===tk);
+  } else if(dateF==='yesterday') {
+    const yk = yesterdayKey();
+    entries=entries.filter(e=>dayKey(tsOf(e))===yk);
+  } else if(dateF==='week') {
+    const cutoff = Date.now() - 7*24*60*60*1000;
+    entries=entries.filter(e=>tsOf(e)>=cutoff);
+  }
+  // 'all' — без фильтрации по дате
+  const prizeTypes=['toy','key_given','toy_small','toy_big','duck_prize','ball_prize'];
+  if(filter==='prize') entries=entries.filter(e=>prizeTypes.includes(e.type));
+  else if(filter==='own') entries=entries.filter(e=>e.type==='own_game'||e.type==='no_prize');
+  else if(filter==='cancel') entries=entries.filter(e=>e.type==='cancel');
+  else if(filter==='shift') entries=entries.filter(e=>e.type?.startsWith('shift'));
+  else if(filter==='stock') entries=entries.filter(e=>['stock_in','stock_out','inventory','balls_update'].includes(e.type));
+  else if(filter==='payment') entries=entries.filter(e=>e.type==='payment');
+  if(locF!=='all') entries=entries.filter(e=>(e._loc||e.loc)===locF);
+  const empty=document.getElementById('log-empty');
+  if(!entries.length){tbody.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  const cls={toy:'td-toy',key_given:'td-key',toy_small:'td-toy',toy_big:'td-big',duck_prize:'td-toy',ball_prize:'td-big',own_game:'td-own',cancel:'td-cancel',shift_open:'td-shift',shift_close:'td-shift',payment:'td-pay'};
+  tbody.innerHTML=entries.map(e=>`<tr>
+    <td class="td-time">${fmtTime(e.ts)}</td>
+    <td class="td-dim">${fmtDate(e.ts)}</td>
+    <td class="${cls[e.type]||''}">${typeLabel(e.type)}</td>
+    ${isOwner?`<td class="td-dim">${e._loc||e.loc||''}</td><td class="td-dim">${e.op||''}</td>`:''}
+    <td class="td-dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(e.note||'').replace(/\{[^}]+\}/g,'')}</td>
+  </tr>`).join('');
+}
+window.renderLog=renderLog;
+
+function renderOverview() {
+  const tbody=document.getElementById('ov-tbody'); if(!tbody) return;
+  // v15: обновляем заголовок с учётом выбранного дня
+  const titleEl=document.getElementById('ov-title');
+  if(titleEl) titleEl.textContent=`Все точки — ${dayLabel(ownerDay)}`;
+
+  tbody.innerHTML=LOCS.map(l=>{
+    const data=allData[enc(l)]||{};
+    // v15: все метрики за выбранный день
+    const pay=paymentsForDay(data, ownerDay);
+    const prizes=allPrizesForDay(data, ownerDay);
+    const warn=pay!==null&&Math.abs(pay-prizes)>2;
+    const ok=pay!==null&&pay===prizes;
+    const shiftState=shiftStateForDay(data, ownerDay);
+    const shiftOpen=!!shiftState?.open;
+    const shiftOp=shiftState?.op||'';
+    let shiftBadge;
+    if(!shiftState) {
+      shiftBadge = `<span style="color:var(--dim);font-size:12px">—</span>`;
+    } else if(shiftOpen) {
+      shiftBadge = `<span style="color:var(--green);font-weight:700;font-size:12px">✓ ${shiftOp}</span>`;
+    } else {
+      // Для прошлого дня — была закрыта, показываем имя оператора который работал
+      const opLabel = shiftOp ? `закр. (${shiftOp})` : 'закрыта';
+      shiftBadge = `<span style="color:var(--red);font-size:12px">✗ ${opLabel}</span>`;
+    }
+    return `<tr onclick="switchOwLoc('${l}',null)">
+      <td style="font-weight:700">${l}</td>
+      <td>${shiftBadge}</td>
+      <td>${pay!==null?pay:'—'}</td>
+      <td>${prizes}</td>
+      <td class="${warn?'ov-warn':ok?'ov-ok':''}">${warn?'⚠ '+Math.abs(pay-prizes):ok?'✓':'—'}</td>
+    </tr>`;
+  }).join('');
+  renderOvDetail(allData[enc(ownerLoc)]||{});
+  renderOvWarns();
+}
+
+function renderOvWarns() {
+  const el=document.getElementById('ow-warns'); if(!el) return;
+  const warns=[];
+  LOCS.forEach(l=>{
+    const s=(allData[enc(l)]||{})?.stock||{};
+    if(s.toy_small!==undefined&&s.toy_small<=3) warns.push(`⚠ ${l}: мало игрушек (${s.toy_small} шт)`);
+    if(s.key!==undefined&&s.key<=10) warns.push(`⚠ ${l}: мало брелков (${s.key} шт)`);
+  });
+  el.innerHTML=warns.map(w=>`<div style="background:var(--red-bg);border:1.5px solid #f0b0a8;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--red);font-weight:700;margin-bottom:10px">${w}</div>`).join('');
+}
+
+function renderOvDetail(data) {
+  const title=document.getElementById('ov-detail-title');
+  if(title) title.textContent=`${ownerLoc} — детали${ownerDay?' · '+dayLabel(ownerDay):''}`;
+  const kpi=document.getElementById('ov-kpi'); if(!kpi) return;
+  // v15: все метрики за выбранный день
+  const pay=paymentsForDay(data, ownerDay);
+  const logEntries=logForDay(data, ownerDay);
+
+  // FIX v9-15: KPI зависит от типа точки
+  let html = `<div class="kpi-box kpi-gold"><div class="kpi-val">${pay!==null?pay:'—'}</div><div class="kpi-lbl">Оплат KitPos</div></div>`;
+
+  if(isTir(ownerLoc)) {
+    // Тир: игрушки маленькие + брелки расчётные
+    const toys = countTypeDay(data, ownerDay, 'toy','toy_small');
+    const keys = keysCalcForDay(data, ownerDay);
+    const own  = countTypeDay(data, ownerDay, 'own_game');
+    html += `<div class="kpi-box kpi-toy"><div class="kpi-val">${toys}</div><div class="kpi-lbl">🧸 Игрушек</div></div>`;
+    html += `<div class="kpi-box kpi-key"><div class="kpi-val">${keys!==null?keys:'—'}</div><div class="kpi-lbl">🔑 Брелков</div></div>`;
+    html += `<div class="kpi-box"><div class="kpi-val" style="color:var(--dim)">${own}</div><div class="kpi-lbl">🎮 Своих</div></div>`;
+  } else if(isBall(ownerLoc)) {
+    // Шарики: большие + маленькие + брелки — всё из ball_prize
+    const ballBig   = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_big').length;
+    const ballSmall = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_small').length;
+    const ballKey   = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='key').length;
+    const noPrize   = countTypeDay(data, ownerDay, 'no_prize');
+    html += `<div class="kpi-box kpi-big"><div class="kpi-val">${ballBig}</div><div class="kpi-lbl">🎁 Больших</div></div>`;
+    html += `<div class="kpi-box kpi-toy"><div class="kpi-val">${ballSmall}</div><div class="kpi-lbl">🧸 Маленьких</div></div>`;
+    html += `<div class="kpi-box kpi-key"><div class="kpi-val">${ballKey}</div><div class="kpi-lbl">🔑 Брелков</div></div>`;
+    if(noPrize>0) html += `<div class="kpi-box"><div class="kpi-val" style="color:var(--dim)">${noPrize}</div><div class="kpi-lbl">🎮 Без приза</div></div>`;
+  } else if(isDuck(ownerLoc)) {
+    // Уточки: только игрушки маленькие — брелков нет
+    const ducks = countTypeDay(data, ownerDay, 'duck_prize');
+    html += `<div class="kpi-box kpi-toy"><div class="kpi-val">${ducks}</div><div class="kpi-lbl">🧸 Призов</div></div>`;
+  } else {
+    // Fallback
+    const toys = countTypeDay(data, ownerDay, 'toy','toy_small','duck_prize');
+    const big  = countTypeDay(data, ownerDay, 'toy_big');
+    const keys = keysCalcForDay(data, ownerDay);
+    html += `<div class="kpi-box kpi-toy"><div class="kpi-val">${toys}</div><div class="kpi-lbl">🧸 Игрушек</div></div>`;
+    if(big>0) html += `<div class="kpi-box kpi-big"><div class="kpi-val">${big}</div><div class="kpi-lbl">🎁 Больших</div></div>`;
+    html += `<div class="kpi-box kpi-key"><div class="kpi-val">${keys!==null?keys:'—'}</div><div class="kpi-lbl">🔑 Брелков</div></div>`;
+  }
+
+  kpi.innerHTML = html;
+  const pi=document.getElementById('pay-inp');
+  if(pi&&!pi.value&&pay!==null) pi.value=pay;
+  const ln=document.getElementById('ov-loc-name');
+  if(ln) ln.textContent=ownerLoc;
+}
+
+function renderRecon(loc) {
+  const el=document.getElementById('recon-content'); if(!el) return;
+  const title=document.getElementById('recon-title');
+  if(title) title.textContent=`🔍 Сверка — ${reconLoc}`;
+  const data=allData[enc(reconLoc)]||{};
+  const pay=paymentsToday(data);
+  const toys=countType(data,'toy','toy_small','duck_prize');
+  const big=countType(data,'toy_big');
+  const keys=keysCalc(data);
+  const allP=allPrizesToday(data);
+  const diff=pay!==null?pay-allP:null;
+  let html='';
+  if(isTir(reconLoc)) {
+    // FIX v9-15: renderOvDetail — KPI теперь зависит от типа точки:
+//            Тир: игрушки + брелки расчётные + свои
+//            Шарики: большие + маленькие + брелки (из ball_prize)
+//            Уточки: только призы, без брелков
+//            savePayments: брелки автосписываются только для Тира
+// FIX v9-14: Нампад Шариков — строковый накопительный ввод (0–10).
+//            Теперь 1→0 = 10 работает корректно.
+//            Убрано двойное подтверждение: confirmBall пишет сразу,
+//            вместо Toast показывает лёгкий flash на 1.8 сек.
+// FIX v9-12: Нампад Шариков — однозначный ввод вместо накопительного.
+//            Нажатие любой цифры = установить значение (не добавлять разряд).
+//            1→0 = 10. Сброс при каждой перестройке панели.
+// FIX v9-13: Статус-бар — маленькие игрушки из ball_prize не считались
+//            (только big и keys учитывались). Исправлено.
+//            Предупреждение о нулевом складе добавлено в confirmBall.
+// FIX v9-11: Правильная сверка Тира
+    //
+    // Логика: счётчик автомата = оплаты + свои игры + неучтённые игры
+    // Поэтому: (оплаты + свои) должно = показаниям счётчика
+    // Если счётчик > (оплаты + свои) — злоупотребление
+    //
+    // Также: оплаты = игрушки + брелки (расчётные)
+    // Если оплаты ≠ (игрушки + брелки) — несоответствие призов
+
+    const ownCnt = countType(data,'own_game','no_prize');
+    // totalAccounted = то, что должен показать счётчик
+    const totalAccounted = pay!==null ? pay + ownCnt : null;
+
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🎮 Своих игр (записано)</span><span class="rr-val rv-dim">${ownCnt}</span></div>`;
+    html+=`<div class="recon-row" style="background:var(--gold-bg);border-radius:6px;padding:8px;margin:4px 0">
+      <span class="rr-lbl" style="color:var(--gold)">📊 Итого по записям</span>
+      <span class="rr-val rv-gold" style="font-size:1.4rem">${totalAccounted!==null?totalAccounted:'—'}</span>
+    </div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Игрушек выдано</span><span class="rr-val rv-toy">${toys}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🔑 Брелков расчётных</span><span class="rr-val rv-key">${keys!==null?keys:'введите оплаты'}</span></div>`;
+
+    // Проверка 1: оплаты соответствуют призам
+    if(pay!==null) {
+      const tirPrizes = toys + (keys!==null?keys:0);
+      const prizeDiff = pay - tirPrizes;
+      if(prizeDiff!==0 && Math.abs(prizeDiff)>2) {
+        html+=`<div class="recon-warn" style="margin-top:6px">⚠ Призов выдано не по норме: разница ${Math.abs(prizeDiff)}</div>`;
+      }
+    }
+
+    html+=`<div style="font-size:12px;color:var(--dim);padding:8px 0 4px;line-height:1.7;border-top:1px solid var(--border);margin-top:8px">
+      🔢 <strong style="color:var(--text)">«Итого по записям»</strong> должно совпасть со счётчиком автоматов.<br>
+      Если счётчик <strong>больше</strong> — были игры без записи.
+    </div>`;
+
+    if(pay===null) {
+      html+='<div style="font-size:13px;color:var(--dim);margin-top:6px">Введите оплаты во вкладке Обзор</div>';
+    }
+  } else if(isBall(reconLoc)) {
+    const _tk = todayKey();
+    const logEntries = Object.values(data?.log||{}).filter(e=>dayKey(tsOf(e))===_tk);
+    const ballBig   = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_big').length;
+    const ballSmall = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='toy_small').length;
+    const ballKey   = logEntries.filter(e=>e.type==='ball_prize'&&e.prize==='key').length;
+    const totalBig   = big + ballBig;
+    const totalSmall = toys + ballSmall;
+    const totalKeys  = countType(data,'key_given') + ballKey;
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🎁 Больших</span><span class="rr-val rv-big">${totalBig}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Маленьких</span><span class="rr-val rv-toy">${totalSmall}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🔑 Брелков</span><span class="rr-val rv-key">${totalKeys}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">Итого призов</span><span class="rr-val rv-gold">${allP}</span></div>`;
+  } else {
+    // Уточки: приз гарантирован каждому — расхождение любое = проверить камеры
+    const duckPrizes = countType(data,'duck_prize');
+    html+=`<div class="recon-row"><span class="rr-lbl">Оплат KitPos</span><span class="rr-val rv-gold">${pay!==null?pay:'—'}</span></div>`;
+    html+=`<div class="recon-row"><span class="rr-lbl">🧸 Выдано</span><span class="rr-val rv-toy">${duckPrizes}</span></div>`;
+  }
+  // Общий блок diff только для Шарики и Уточки (Тир имеет свою логику выше)
+  if(!isTir(reconLoc)) {
+    if(diff!==null) {
+      // Для Уточек — любое расхождение подозрительно (приз гарантирован всегда)
+      const tolerance = isDuck(reconLoc) ? 0 : 2;
+      html+=diff===0?'<div class="recon-ok">✓ Данные совпадают</div>':
+        Math.abs(diff)<=tolerance?`<div class="recon-ok">✓ Разница ${Math.abs(diff)} — в норме</div>`:
+        `<div class="recon-warn">⚠ Расхождение ${Math.abs(diff)} — проверить камеры</div>`;
+    } else {
+      html+='<div style="font-size:13px;color:var(--dim);margin-top:10px">Введите оплаты во вкладке Обзор</div>';
+    }
+  }
+  el.innerHTML=html;
+}
+
+function renderOps() {
+  const el=document.getElementById('ops-list'); if(!el) return;
+  const ops=Object.entries(allUsers).filter(([,u])=>u.role==='operator');
+  if(!ops.length){el.innerHTML='<div style="color:var(--dim);font-size:14px;padding:10px">Операторов нет</div>';return;}
+  el.innerHTML=ops.map(([k,u])=>`
+    <div class="op-item">
+      <div style="flex:1"><div class="op-name">${u.name}</div><div class="op-meta">📍 ${u.location} · 🔑 ${u.pw}</div></div>
+      <button class="op-del" onclick="deleteOp('${k}')">Удалить</button>
+    </div>`).join('');
+}
+
+function renderMainStock(s) {
+  const el=document.getElementById('stock-display'); if(!el) return;
+  if(stockLoc!=='main') return;
+  const items=[
+    {k:'toy_small',ico:'🧸',n:'Игрушки маленькие',cls:'sc-toy'},
+    {k:'toy_big',ico:'🎁',n:'Игрушки большие',cls:'sc-big'},
+    {k:'key',ico:'🔑',n:'Брелки',cls:'sc-key'},
+    {k:'balls_strike',ico:'🔵',n:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {k:'balls_air',ico:'🎈',n:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  el.innerHTML='<div class="sec-title">Главный склад</div>'+items.map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info"><div class="sc-name">${it.n}</div>
+        <div class="sc-cnt ${it.cls}">${s[it.k]!==undefined?(it.approx?'~':'')+s[it.k]+' шт':'—'}</div></div>
+    </div>`).join('');
+}
+
+function renderLocStock(loc) {
+  const el=document.getElementById('stock-display'); if(!el) return;
+  const s=(allData[enc(loc)]||{})?.stock||{};
+  const pending=(allData[enc(loc)]||{})?.pending_stock||{};
+  const allowed=LOC_ITEMS[loc]||LOC_ITEMS['main'];
+  const allItemDefs=[
+    {k:'toy_small',ico:'🧸',n:'Игрушки маленькие',cls:'sc-toy'},
+    {k:'toy_big',ico:'🎁',n:'Игрушки большие',cls:'sc-big'},
+    {k:'key',ico:'🔑',n:'Брелки',cls:'sc-key'},
+    {k:'balls_strike',ico:'🔵',n:'Шары страйкбольные',approx:true,cls:'sc-ball'},
+    {k:'balls_air',ico:'🎈',n:'Шары надувные',approx:true,cls:'sc-ball'},
+  ];
+  const items=allItemDefs.filter(it=>allowed.includes(it.k));
+  // FIX v10-4: подсказка о pending_stock если товар ожидает приёма
+  // FIX v13-2: показываем только pending позиции допустимые для этой точки
+  const allowedKeys = LOC_ITEMS[loc] || LOC_ITEMS['main'];
+  const hasPending = Object.entries(pending).some(([k,v])=>v>0 && allowedKeys.includes(k));
+  const pendingHtml = hasPending ? `<div class="info-box" style="margin-bottom:10px">
+    📦 Ожидает подтверждения приёма при открытии смены оператором:<br>
+    <span style="font-size:13px">${Object.entries(pending).filter(([k,v])=>v>0&&allowedKeys.includes(k)).map(([k,v])=>{
+      const names={toy_small:'🧸 Маленьких',toy_big:'🎁 Больших',key:'🔑 Брелков',balls_strike:'🔵 Шаров страйкб.',balls_air:'🎈 Шаров надув.'};
+      return (names[k]||k)+': +'+v;
+    }).join(', ')}</span>
+  </div>` : '';
+  el.innerHTML=`<div class="sec-title">${loc}</div>`+pendingHtml+items.map(it=>`
+    <div class="stock-card">
+      <div class="sc-icon">${it.ico}</div>
+      <div class="sc-info"><div class="sc-name">${it.n}</div>
+        <div class="sc-cnt ${it.cls}">${s[it.k]!==undefined?(it.approx?'~':'')+s[it.k]+' шт':'—'}</div>
+        ${(s[it.k]!==undefined&&s[it.k]<=3)?'<div class="sc-warn">⚠ Мало!</div>':''}
+      </div>
+    </div>`).join('');
+}
+
+function exportCSV() {
+  let entries=[];
+  Object.entries(allData).forEach(([lk,ld])=>{
+    const ln=LOCS.find(l=>enc(l)===lk)||lk;
+    Object.values(ld?.log||{}).forEach(e=>entries.push({...e,_loc:ln}));
+  });
+  entries.sort((a,b)=>tsOf(b)-tsOf(a));
+  const rows=['Дата,Время,Точка,Тип,Детали,Оператор']
+    .concat(entries.map(e=>`${fmtDate(e.ts)},${fmtTime(e.ts)},${e._loc||e.loc||''},${typeLabel(e.type)},${(e.note||'').replace(/,/g,';').replace(/\{[^}]+\}/g,'')},${e.op||''}`));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n'));
+  a.download=`arcada_${todayKey()}.csv`;
+  a.click();
+}
+window.exportCSV=exportCSV;
+
+// ══════════════════════════════════════════════════════════
+// TAB / LOC SWITCHERS
+// ══════════════════════════════════════════════════════════
+function swTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+  const p=document.getElementById('tab-'+id); if(p)p.classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='mylog'||id==='owlog') renderLog();
+  if(id==='overview') renderOverview();
+  if(id==='recon') renderRecon();
+  if(id==='operators') renderOps();
+  // FIX 3: rebuild close-shift panel when switching to it, using current subLoc
+  if(id==='close-shift') {
+    const csPanel = document.getElementById('tab-close-shift');
+    if(csPanel) {
+      // FIX v12-2: сохранить введённые значения перед пересборкой панели
+      const sv={};
+      csPanel.querySelectorAll('input[type=number]').forEach(el=>{if(el.id&&el.value!=='')sv[el.id]=el.value;});
+      csPanel.innerHTML = buildCloseShiftPanel(CU.location);
+      Object.entries(sv).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
+    }
+    renderAll();
+    setTimeout(prefillCloseShift, 50);
+  }
+  if(id==='owstock') {
+    if(stockLoc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+    else renderLocStock(stockLoc);
+    renderStockLog(stockLoc);
+    setTimeout(()=>{ updateMoveItems(); updateWriteOffItems(); },150);
+  }
+}
+window.swTab=swTab;
+
+function switchSubLoc(loc, btn) {
+  subLoc=loc;
+  document.querySelectorAll('.loc-sw-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  locData=allData[enc(loc)]||{};
+  // FIX 3: rebuild game panel AND close-shift panel when subLoc changes
+  const gp=document.getElementById('tab-game');
+  if(gp) gp.innerHTML=buildGamePanel(CU.location);
+  const csPanel=document.getElementById('tab-close-shift');
+  if(csPanel) {
+    // FIX v12-2: сохранить значения перед пересборкой
+    const sv={};
+    csPanel.querySelectorAll('input[type=number]').forEach(el=>{if(el.id&&el.value!=='')sv[el.id]=el.value;});
+    csPanel.innerHTML=buildCloseShiftPanel(CU.location);
+    Object.entries(sv).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
+  }
+  renderAll();
+  const activeTab = document.querySelector('.tab-btn.active');
+  if(activeTab && activeTab.textContent.includes('Закрытие')) {
+    setTimeout(prefillCloseShift, 50);
+  }
+}
+window.switchSubLoc=switchSubLoc;
+
+function switchOwLoc(loc, btn) {
+  ownerLoc=loc;
+  if(btn){
+    document.querySelectorAll('#ov-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  buildStatsBar(loc);
+  const data=allData[enc(loc)]||{};
+  renderOvDetail(data);
+  // v15: при переключении локации автозаполняем поле оплат за выбранный день
+  const pi=document.getElementById('pay-inp');
+  if(pi){
+    pi.value='';
+    const pay=paymentsForDay(data, ownerDay);
+    if(pay!==null) pi.value=pay;
+  }
+  const ps=document.getElementById('pay-saved');if(ps)ps.textContent='';
+}
+window.switchOwLoc=switchOwLoc;
+
+// v15: переключение дня в Обзоре
+function switchOwDay(which, btn) {
+  if(which === 'today') ownerDay = null;
+  else if(which === 'yesterday') ownerDay = yesterdayKey();
+  // для 'pick' обработка в pickOwDay
+
+  // Обновляем активную кнопку
+  document.querySelectorAll('#ov-day-switcher .day-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  renderOverview();
+  // Перерисовываем оплаты и UI блока ввода оплат под новый день
+  updatePayBlockForDay();
+}
+window.switchOwDay = switchOwDay;
+
+function pickOwDay(btn) {
+  const picker = document.getElementById('ov-day-picker');
+  if(!picker) return;
+  // Ставим текущее выбранное значение если есть
+  if(ownerDay) picker.value = ownerDay;
+  // Открываем календарь. На мобильных showPicker может не работать — фолбек на click
+  try { picker.showPicker(); }
+  catch(e) { picker.click(); }
+}
+window.pickOwDay = pickOwDay;
+
+function onOwDayPicked(input) {
+  const val = input.value; // 'YYYY-MM-DD'
+  if(!val) return;
+  // Проверка что дата не в будущем
+  if(val > todayKey()) {
+    alert('Нельзя выбрать будущую дату');
+    input.value = '';
+    return;
+  }
+  ownerDay = (val === todayKey()) ? null : val;
+
+  // Обновляем активную кнопку
+  document.querySelectorAll('#ov-day-switcher .day-btn').forEach(b=>b.classList.remove('active'));
+  const pickBtn = document.querySelector('#ov-day-switcher .day-btn[data-day="pick"]');
+  if(pickBtn) {
+    pickBtn.classList.add('active');
+    // Меняем текст кнопки на выбранную дату
+    if(ownerDay) pickBtn.textContent = '📅 ' + dayLabel(ownerDay);
+    else pickBtn.textContent = '📅 Дата';
+  }
+  // Сбросить текст «вчера» и «сегодня» если выбрали через календарь — активной делаем pick
+  renderOverview();
+  updatePayBlockForDay();
+}
+window.onOwDayPicked = onOwDayPicked;
+
+// v15: обновление блока ввода оплат с учётом выбранного дня
+function updatePayBlockForDay() {
+  const title = document.getElementById('ov-pay-title');
+  const hint = document.getElementById('ov-pay-hint');
+  const card = document.getElementById('ov-pay-card');
+  const btn = card?.querySelector('.btn-primary');
+  const data = allData[enc(ownerLoc)] || {};
+  const isToday = !ownerDay;
+
+  if(title) title.textContent = isToday
+    ? 'Ввести оплаты из KitPos'
+    : `Ввести оплаты за ${dayLabel(ownerDay)}`;
+
+  // Убираем старое предупреждение о ретро
+  const oldWarn = card?.querySelector('.retro-warn');
+  if(oldWarn) oldWarn.remove();
+
+  if(isToday) {
+    if(hint) hint.textContent = 'Личный кабинет KiT Vending → транзакции за сегодня';
+    if(btn) btn.textContent = '✓ Применить · Списать брелки';
+  } else {
+    if(hint) hint.textContent = `Транзакции KiT Vending за ${dayLabel(ownerDay)}`;
+    if(btn) btn.textContent = '✓ Сохранить за прошлый день';
+    // Добавляем предупреждение
+    const warn = document.createElement('div');
+    warn.className = 'retro-warn';
+    warn.innerHTML = '⚠ Ретроспективная запись. Склад брелков не пересчитывается — только фиксируется факт оплат.';
+    card.insertBefore(warn, card.querySelector('#ov-loc-name'));
+  }
+
+  // Автозаполнение поля оплат значением за выбранный день
+  const pi = document.getElementById('pay-inp');
+  if(pi) {
+    pi.value = '';
+    const pay = paymentsForDay(data, ownerDay);
+    if(pay !== null) pi.value = pay;
+  }
+  const ps = document.getElementById('pay-saved');
+  if(ps) ps.textContent = '';
+}
+window.updatePayBlockForDay = updatePayBlockForDay;
+
+function switchReconLoc(loc, btn) {
+  reconLoc=loc;
+  document.querySelectorAll('#recon-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderRecon(loc);
+}
+window.switchReconLoc=switchReconLoc;
+
+function switchStockLoc(loc, btn) {
+  stockLoc=loc;
+  document.querySelectorAll('#stock-loc-tabs .loc-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(loc==='main') get(dbRef('main_stock')).then(s=>renderMainStock(s.val()||{}));
+  else renderLocStock(loc);
+  renderStockLog(loc);
+}
+window.switchStockLoc=switchStockLoc;
+
+function renderStockLog(loc) {
+  const el=document.getElementById('stock-log-wrap'); if(!el) return;
+  get(dbRef('main_stock_log')).then(snap=>{
+    const all=Object.values(snap.val()||{}).sort((a,b)=>tsOf(b)-tsOf(a));
+    const items = loc==='main' ? all : all.filter(e=>{
+      const locName = loc;
+      // FIX v10-4: приходы (type:'in') — только для главного склада
+      if(e.type==='in') return false;
+      return e.from===locName || e.to===locName;
+    });
+    const show = items.slice(0,20);
+    if(!show.length){el.innerHTML='';return;}
+    const lbls={in:'➕ Приход',move:'🔄 Перемещение',writeoff:'🗑 Списание'};
+    el.innerHTML=`<div class="card">
+      <h4>📋 История операций</h4>
+      ${show.map(e=>`
+        <div class="recent-item">
+          <span class="ri-time">${fmtTime(e.ts)}</span>
+          <span style="font-size:12px;color:var(--dim);min-width:50px">${fmtDate(e.ts)}</span>
+          <span class="ri-type ri-shift" style="font-size:13px">${lbls[e.type]||e.type}</span>
+          <span style="font-size:12px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis">${e.note||''}</span>
+        </div>`).join('')}
+    </div>`;
+  }).catch(()=>{el.innerHTML='';});
+}
+
+function renderStockPanel() {
+  const loc=CU?.role==='owner'?ownerLoc:CU?.location;
+  const data=CU?.role==='owner'?(allData[enc(loc)]||{}):locData;
+  const e=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const s=data?.stock||{};
+  e('stk-toy',s.toy_small!==undefined?s.toy_small+' шт':'—');
+  e('stk-big',s.toy_big!==undefined?s.toy_big+' шт':'—');
+  e('stk-key',s.key!==undefined?s.key+' шт':'—');
+}
+
+// ══════════════════════════════════════════════════════════
+// OPERATORS
+// ══════════════════════════════════════════════════════════
+function addOperator() {
+  const name=document.getElementById('op-name')?.value.trim();
+  const loc=document.getElementById('op-loc')?.value;
+  const pw=document.getElementById('op-pw')?.value.trim();
+  if(!name||!loc||!pw){alert('Заполните все поля');return;}
+  const key='op_'+Date.now();
+  set(dbRef(`users/${key}`),{name,role:'operator',location:loc,pw});
+  document.getElementById('op-name').value='';
+  document.getElementById('op-pw').value='';
+  alert(`✓ Оператор ${name} добавлен`);
+}
+window.addOperator=addOperator;
+
+function deleteOp(k) {
+  if(!confirm('Удалить оператора?')) return;
+  remove(dbRef(`users/${k}`));
+}
+window.deleteOp=deleteOp;
+
+function saveInitCounters() {
+  const loc=document.getElementById('init-loc')?.value||'Тир 1';
+  const upd={};
+  let saved=0;
+  MACHINES.forEach(m=>{
+    const v=parseInt(document.getElementById(`init-ctr-${m}`)?.value);
+    if(!isNaN(v)&&v>=0){upd[`counters/${m}`]={prev:v,prevTs:serverTimestamp()};saved++;}
+  });
+  if(!saved){alert('Введите хотя бы одно показание');return;}
+  update(dbRef(locPath(loc)),upd);
+  alert(`✓ Начальные показания сохранены для ${loc}`);
+}
+window.saveInitCounters=saveInitCounters;
+
+function savePrizeRules() {
+  const tirToy=parseInt(document.getElementById('s-tir-toy')?.value)||20;
+  const ballBig=parseInt(document.getElementById('s-ball-big')?.value)||10;
+  const ballSmall=parseInt(document.getElementById('s-ball-small')?.value)||9;
+  ['Тир 1','Тир 2'].forEach(l=>update(dbRef(`${locPath(l)}/prizes`),{toy:tirToy}));
+  update(dbRef(`${locPath('Шарики')}/prizes`),{toy_big:ballBig,toy_small:ballSmall});
+  alert('✓ Правила сохранены');
+}
+window.savePrizeRules=savePrizeRules;
+
+function saveOwnerPw() {
+  const pw=document.getElementById('new-pw')?.value.trim();
+  if(!pw){alert('Введите пароль');return;}
+  update(dbRef(`users/${CU.key}`),{pw});
+  CU.pw=pw;
+  document.getElementById('new-pw').value='';
+  alert('✓ Пароль изменён');
+}
+window.saveOwnerPw=saveOwnerPw;
+
+init();
+</script>
+</body>
+</html>
