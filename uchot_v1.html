@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Учёт mini · v1</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --card2: #f9f9f9;
+  --border: #e0e0e0;
+  --text: #1a1a1a;
+  --text2: #666666;
+  --dim: #999999;
+  --gold: #c47a00;
+  --gold-bg: #fff8e8;
+  --red: #c0392b;
+  --red-bg: #fdf0ee;
+  --green: #1a7a3a;
+  --green-bg: #edf7f1;
+  --blue: #1a5a9a;
+  --blue-bg: #eef4fc;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.12);
+  --radius: 10px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  font-size: 15px;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* HEADER */
+.app-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow);
+}
+.hdr-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+.hdr-sub { font-size: 11px; color: var(--dim); margin-top: 1px; }
+.hdr-badge {
+  font-size: 10px; font-weight: 700; color: var(--dim);
+  padding: 2px 6px; background: var(--bg); border-radius: 8px;
+}
+
+/* TABS */
+.tabs {
+  display: flex; background: var(--card); border-bottom: 1px solid var(--border);
+  overflow-x: auto; position: sticky; top: 53px; z-index: 19;
+}
+.tab-btn {
+  flex: 1 0 auto; min-width: 80px; padding: 10px 12px;
+  background: transparent; border: none; border-bottom: 3px solid transparent;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text2);
+  cursor: pointer; white-space: nowrap;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn:active { background: var(--bg); }
+
+/* PANELS */
+.panel { display: none; padding: 12px; }
+.panel.active { display: block; }
+
+.card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.card h4 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; color: var(--gold);
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 16px; border-radius: 8px; border: none;
+  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  background: var(--gold); color: #fff;
+}
+.btn:active { opacity: .85; }
+.btn-block { display: flex; width: 100%; }
+.btn-sec { background: var(--card2); color: var(--text); border: 1.5px solid var(--border); }
+.btn-red { background: var(--red); }
+.btn-green { background: var(--green); }
+.btn-sm { padding: 6px 10px; font-size: 12px; }
+
+/* FORMS */
+.f-row { margin-bottom: 12px; }
+.f-row label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--text2);
+  margin-bottom: 5px;
+}
+.f-input, .f-select {
+  width: 100%; padding: 10px 12px; background: var(--card2);
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: inherit; font-size: 15px; color: var(--text); outline: none;
+}
+.f-input:focus, .f-select:focus { border-color: var(--gold); }
+.f-input.num { font-size: 18px; font-weight: 700; text-align: center; }
+
+.f-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td {
+  text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tbl th { color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+.tbl td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.tbl tr.shift-row { cursor: pointer; }
+.tbl tr.shift-row:active { background: var(--bg); }
+.tbl tr.detail-row td {
+  background: var(--card2); border-left: 3px solid var(--gold);
+  padding: 12px; font-size: 13px; line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* BADGES */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+}
+.badge-ok { background: var(--green-bg); color: var(--green); }
+.badge-warn { background: #fff4e0; color: #b06000; }
+.badge-bad { background: var(--red-bg); color: var(--red); }
+.badge-dim { background: var(--bg); color: var(--dim); }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: #fff; padding: 10px 18px; border-radius: 8px;
+  font-size: 14px; font-weight: 600; box-shadow: var(--shadow2);
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+  z-index: 100; max-width: 90%;
+}
+#toast.show { opacity: 1; }
+
+/* MODAL */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: none; align-items: flex-end; justify-content: center; z-index: 50;
+  padding: 0;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  width: 100%; max-width: 600px; background: var(--card);
+  border-radius: 16px 16px 0 0; padding: 18px;
+  max-height: 95vh; overflow-y: auto;
+}
+.modal-h {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px;
+}
+.modal-h h3 { font-size: 1.05rem; font-weight: 700; color: var(--gold); }
+.modal-h .x {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg); border: none; font-size: 18px; cursor: pointer;
+}
+
+/* COUNTER GRID FOR TIR */
+.ctr-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.ctr-row {
+  background: var(--card2); padding: 10px; border-radius: 8px;
+}
+.ctr-row .ctr-name { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+.ctr-row .ctr-input { width: 100%; padding: 6px 8px; background: #fff;
+  border: 1px solid var(--border); border-radius: 6px; font-size: 16px;
+  font-weight: 700; text-align: center; font-family: inherit; }
+
+/* SECTION TITLE */
+.sec-title {
+  font-size: 12px; font-weight: 700; color: var(--gold);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin: 14px 0 8px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+
+/* OP/PRIZE LIST ROW */
+.list-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; background: var(--card2); border-radius: 8px; margin-bottom: 6px;
+}
+.list-row > div:first-child { flex: 1; }
+.list-row .lr-name { font-weight: 700; font-size: 14px; }
+.list-row .lr-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.list-row .lr-x {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--red-bg); color: var(--red); border: none;
+  font-size: 14px; cursor: pointer;
+}
+
+/* EMPTY */
+.empty {
+  text-align: center; padding: 30px 14px; color: var(--dim); font-size: 14px;
+}
+
+/* STOCK GRID */
+.stock-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px;
+}
+.stock-cell {
+  background: var(--card2); padding: 10px; border-radius: 8px; text-align: center;
+}
+.stock-cell .sc-emoji { font-size: 18px; }
+.stock-cell .sc-val { font-size: 20px; font-weight: 700; margin: 4px 0; }
+.stock-cell .sc-lbl { font-size: 11px; color: var(--text2); }
+
+/* DAY SWITCHER */
+.day-sw {
+  display: flex; background: var(--card); border-radius: 8px; padding: 4px;
+  box-shadow: var(--shadow); margin-bottom: 12px;
+}
+.day-sw button {
+  flex: 1; padding: 8px; background: transparent; border: none;
+  font-family: inherit; font-weight: 600; font-size: 13px; color: var(--text2);
+  border-radius: 6px; cursor: pointer;
+}
+.day-sw button.active { background: var(--gold-bg); color: var(--gold); }
+
+</style>
+</head>
+<body>
+
+<div class="app-hdr">
+  <div>
+    <div class="hdr-title">🎯 Учёт mini</div>
+    <div class="hdr-sub" id="hdr-date"></div>
+  </div>
+  <div class="hdr-badge">v1</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="overview">📊 Обзор</button>
+  <button class="tab-btn" data-tab="new">➕ Смена</button>
+  <button class="tab-btn" data-tab="stock">📦 Склад</button>
+  <button class="tab-btn" data-tab="salary">💰 ЗП</button>
+  <button class="tab-btn" data-tab="settings">⚙️</button>
+</div>
+
+<div class="panel active" id="tab-overview"></div>
+<div class="panel" id="tab-new"></div>
+<div class="panel" id="tab-stock"></div>
+<div class="panel" id="tab-salary"></div>
+<div class="panel" id="tab-settings"></div>
+
+<div id="toast"></div>
+<div class="modal-bg" id="modal"><div class="modal" id="modal-body"></div></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// УЧЁТ MINI v1 — простая версия для одного владельца, localStorage.
+// ══════════════════════════════════════════════════════════
+// Главные принципы:
+//  1. Все данные в localStorage (JSON), один объект `state`.
+//  2. Никакого Firebase, никакого онлайна — работает офлайн всегда.
+//  3. Только владелец, без ролей. Открыл — попал в приложение.
+//  4. Смены вводятся в конце смены (или задним числом). Никаких выдач
+//     призов во время смены. Только итоговая инвентаризация.
+//  5. Резервная копия — экспорт/импорт JSON-файла.
+
+const STORAGE_KEY = 'uchot_mini_v1';
+
+const LOCS = ['Тир 1', 'Тир 2', 'Шарики', 'Уточки'];
+const TIR_LOCS = ['Тир 1', 'Тир 2'];
+const MACHINES = [1, 2, 3, 4]; // автоматы в Тире
+
+// Дефолтное состояние при первом запуске
+const DEFAULT_STATE = {
+  version: 1,
+  settings: {
+    prices: { 'Тир 1': 350, 'Тир 2': 350, 'Шарики': 250, 'Уточки': 300 },
+    operators: [
+      { id: 'op_default', name: 'Оператор', percent: 10 }
+    ],
+    prizeTypes: [
+      { id: 'toy_small', emoji: '🧸', label: 'Маленькая игрушка', cost: 80, locs: ['Тир 1','Тир 2','Шарики','Уточки'] },
+      { id: 'toy_big',   emoji: '🎁', label: 'Большая игрушка',    cost: 250, locs: ['Шарики'] },
+      { id: 'key',       emoji: '🔑', label: 'Брелок',             cost: 20,  locs: ['Тир 1','Тир 2','Шарики'] },
+      { id: 'balls_strike', emoji: '🔵', label: 'Шары страйкбольные', cost: 0.5, locs: ['Тир 1','Тир 2'] },
+      { id: 'balls_air',    emoji: '🎈', label: 'Шары надувные',      cost: 1,   locs: ['Шарики'] }
+    ]
+  },
+  mainStock: {},
+  locStocks: { 'Тир 1': {}, 'Тир 2': {}, 'Шарики': {}, 'Уточки': {} },
+  transfers: [],
+  shifts: []
+};
+
+let state = loadState();
+let activeTab = 'overview';
+let expandedShiftId = null;
+let salaryRange = { mode: 'month', month: monthKey(new Date()), from: '', to: '' };
+let editingShiftId = null;
+
+// ══════════════════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════════════════
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    const s = JSON.parse(raw);
+    // Простая миграция — если каких-то ключей нет, добавим из дефолта
+    if(!s.version) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    if(!s.settings) s.settings = DEFAULT_STATE.settings;
+    if(!s.settings.prices) s.settings.prices = {...DEFAULT_STATE.settings.prices};
+    if(!s.settings.operators) s.settings.operators = [...DEFAULT_STATE.settings.operators];
+    if(!s.settings.prizeTypes) s.settings.prizeTypes = [...DEFAULT_STATE.settings.prizeTypes];
+    if(!s.mainStock) s.mainStock = {};
+    if(!s.locStocks) s.locStocks = { 'Тир 1': {}, 'Тир 2': {}, 'Шарики': {}, 'Уточки': {} };
+    LOCS.forEach(l => { if(!s.locStocks[l]) s.locStocks[l] = {}; });
+    if(!s.transfers) s.transfers = [];
+    if(!s.shifts) s.shifts = [];
+    return s;
+  } catch(e) {
+    console.error('Ошибка загрузки', e);
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e) {
+    console.error('Ошибка сохранения', e);
+    showToast('⚠ Не удалось сохранить — нет места?');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// УТИЛИТЫ
+// ══════════════════════════════════════════════════════════
+function uid() { return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function monthKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function fmtDate(yyyymmdd) {
+  if(!yyyymmdd) return '';
+  const [y,m,d] = yyyymmdd.split('-');
+  return `${d}.${m}.${y}`;
+}
+function fmtMoney(n) {
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('ru-RU') + ' ₽';
+}
+function escapeHtml(s) {
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showToast(text, ms = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function openModal(html) {
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+window.closeModal = closeModal;
+
+// ══════════════════════════════════════════════════════════
+// БИЗНЕС-ЛОГИКА: РАСЧЁТЫ ПО СМЕНЕ
+// ══════════════════════════════════════════════════════════
+// Каждая смена: {id, date, loc, operatorId, payments, ownGames, counters{open,close}, inventory{}, startStock{}, note}
+//
+// На основе записанных данных вычисляем:
+//   - выручка (касса × цена)
+//   - игры по счётчикам (для Тира)
+//   - выдано призов (старт + приход − факт)
+//   - себестоимость призов
+//   - прибыль (выручка − себестоимость)
+//   - расхождения (касса vs игры, призы vs игры)
+
+function priceFor(loc) {
+  return state.settings.prices[loc] || 0;
+}
+function operatorById(id) {
+  return state.settings.operators.find(o => o.id === id);
+}
+function prizesForLoc(loc) {
+  return state.settings.prizeTypes.filter(pt => (pt.locs||[]).includes(loc));
+}
+function prizeById(id) {
+  return state.settings.prizeTypes.find(pt => pt.id === id);
+}
+
+// Игры по счётчикам Тира (для смены)
+function tirGames(sh) {
+  if(!TIR_LOCS.includes(sh.loc)) return 0;
+  const open = sh.counters?.open || [0,0,0,0];
+  const close = sh.counters?.close || [0,0,0,0];
+  let total = 0;
+  MACHINES.forEach((m, i) => {
+    const o = Number(open[i]) || 0;
+    const c = Number(close[i]) || 0;
+    total += Math.max(0, c - o);
+  });
+  return total;
+}
+
+// Расчёт всей сводки по смене
+function calcShift(sh) {
+  const out = {
+    payments: Number(sh.payments) || 0,
+    price: priceFor(sh.loc),
+    ownGames: Number(sh.ownGames) || 0,
+    revenue: 0,
+    games: 0,           // всего игр (по счётчикам Тира / по призам Шариков-Уточек)
+    paidGames: 0,
+    prizes: {},         // id → выдано
+    prizesTotal: 0,
+    cost: 0,            // себестоимость всех выданных + расход шаров
+    profit: 0,
+    problems: []        // массив строк
+  };
+  out.revenue = out.payments * out.price;
+
+  // Выдано призов = старт + приход − факт
+  const start = sh.startStock || {};
+  const incoming = sh.incoming || {};
+  const inv = sh.inventory || {};
+  const types = state.settings.prizeTypes;
+  types.forEach(pt => {
+    if(!(pt.locs||[]).includes(sh.loc)) return;
+    const startN = Number(start[pt.id]) || 0;
+    const incN = Number(incoming[pt.id]) || 0;
+    const invN = Number(inv[pt.id]);
+    if(isNaN(invN)) { out.prizes[pt.id] = null; return; }
+    const issued = Math.max(0, startN + incN - invN);
+    out.prizes[pt.id] = issued;
+    // Себестоимость
+    out.cost += issued * (Number(pt.cost) || 0);
+  });
+
+  // Игры
+  if(TIR_LOCS.includes(sh.loc)) {
+    out.games = tirGames(sh);
+    out.paidGames = Math.max(0, out.games - out.ownGames);
+    // Призы клиентам: игрушки + брелки (не шары)
+    out.prizesTotal = (out.prizes.toy_small || 0) + (out.prizes.key || 0);
+  } else if(sh.loc === 'Шарики') {
+    out.prizesTotal = (out.prizes.toy_big || 0) + (out.prizes.toy_small || 0) + (out.prizes.key || 0);
+    out.paidGames = out.prizesTotal;
+    out.games = out.paidGames + out.ownGames;
+  } else if(sh.loc === 'Уточки') {
+    out.prizesTotal = (out.prizes.toy_small || 0);
+    out.paidGames = out.prizesTotal;
+    out.games = out.paidGames;
+  }
+
+  out.profit = out.revenue - out.cost;
+
+  // Проблемы
+  if(TIR_LOCS.includes(sh.loc)) {
+    if(out.games > 0 && out.paidGames > out.payments) {
+      out.problems.push(`❌ ${out.paidGames - out.payments} игр мимо кассы (счётчики ${out.paidGames}, касса ${out.payments})`);
+    } else if(out.games > 0 && out.payments > out.paidGames) {
+      out.problems.push(`⚠ Касса на ${out.payments - out.paidGames} больше счётчиков — опечатка?`);
+    }
+    if(out.games > 0 && out.prizesTotal !== out.paidGames) {
+      const diff = out.paidGames - out.prizesTotal;
+      if(diff > 0) out.problems.push(`❌ ${diff} клиент(ов) не получили приз`);
+      else out.problems.push(`⚠ Призов на ${-diff} больше игр (выдача без игры)`);
+    }
+  } else {
+    if(out.payments !== out.paidGames) {
+      const diff = out.paidGames - out.payments;
+      if(diff > 0) out.problems.push(`❌ ${diff} призов выдано без оплаты`);
+      else out.problems.push(`⚠ Оплат на ${-diff} больше призов`);
+    }
+  }
+
+  return out;
+}
+
+// ══════════════════════════════════════════════════════════
+// НАВИГАЦИЯ
+// ══════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name)
+  );
+  document.querySelectorAll('.panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'tab-' + name)
+  );
+  render();
+}
+window.switchTab = switchTab;
+
+// ══════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════
+function render() {
+  document.getElementById('hdr-date').textContent = fmtDate(todayKey());
+  if(activeTab === 'overview') renderOverview();
+  else if(activeTab === 'new') renderNewShift();
+  else if(activeTab === 'stock') renderStock();
+  else if(activeTab === 'salary') renderSalary();
+  else if(activeTab === 'settings') renderSettings();
+}
+
+// ══════════════════════════════════════════════════════════
+// ОБЗОР — список смен
+// ══════════════════════════════════════════════════════════
+let overviewFilter = { period: 'all', loc: 'all' };
+
+function renderOverview() {
+  const panel = document.getElementById('tab-overview');
+  const shifts = [...state.shifts].sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id));
+
+  // фильтры
+  let filtered = shifts;
+  if(overviewFilter.period === 'today') {
+    filtered = filtered.filter(s => s.date === todayKey());
+  } else if(overviewFilter.period === 'week') {
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000);
+    const wk = weekAgo.toISOString().slice(0,10);
+    filtered = filtered.filter(s => s.date >= wk);
+  } else if(overviewFilter.period === 'month') {
+    const mk = monthKey(new Date());
+    filtered = filtered.filter(s => s.date.startsWith(mk));
+  }
+  if(overviewFilter.loc !== 'all') {
+    filtered = filtered.filter(s => s.loc === overviewFilter.loc);
+  }
+
+  // Сводка
+  let totalRev = 0, totalCost = 0, totalShifts = filtered.length;
+  filtered.forEach(s => {
+    const c = calcShift(s);
+    totalRev += c.revenue;
+    totalCost += c.cost;
+  });
+
+  panel.innerHTML = `
+    <div class="card">
+      <div class="day-sw" id="period-sw">
+        <button data-p="today" class="${overviewFilter.period==='today'?'active':''}">Сегодня</button>
+        <button data-p="week" class="${overviewFilter.period==='week'?'active':''}">Неделя</button>
+        <button data-p="month" class="${overviewFilter.period==='month'?'active':''}">Месяц</button>
+        <button data-p="all" class="${overviewFilter.period==='all'?'active':''}">Всё</button>
+      </div>
+      <div class="f-row">
+        <label>Точка</label>
+        <select class="f-select" id="ov-loc-filter">
+          <option value="all" ${overviewFilter.loc==='all'?'selected':''}>Все точки</option>
+          ${LOCS.map(l => `<option value="${l}" ${overviewFilter.loc===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Сводка</h4>
+      <div class="f-grid-2">
+        <div style="background:var(--gold-bg);padding:10px;border-radius:8px">
+          <div style="font-size:11px;color:var(--text2);font-weight:600">Выручка</div>
+          <div style="font-size:18px;font-weight:700;color:var(--gold)">${fmtMoney(totalRev)}</div>
+        </div>
+        <div style="background:var(--green-bg);padding:10px;border-radius:8px">
+          <div style="font-size:11px;color:var(--text2);font-weight:600">Прибыль</div>
+          <div style="font-size:18px;font-weight:700;color:var(--green)">${fmtMoney(totalRev - totalCost)}</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px">
+          <div style="font-size:11px;color:var(--text2);font-weight:600">Смен</div>
+          <div style="font-size:18px;font-weight:700">${totalShifts}</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px">
+          <div style="font-size:11px;color:var(--text2);font-weight:600">Себестоимость</div>
+          <div style="font-size:18px;font-weight:700;color:var(--red)">${fmtMoney(totalCost)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Смены (${filtered.length})</h4>
+      <div id="shifts-table"></div>
+    </div>
+  `;
+
+  // подключаем обработчики
+  panel.querySelectorAll('#period-sw button').forEach(b =>
+    b.addEventListener('click', () => { overviewFilter.period = b.dataset.p; renderOverview(); })
+  );
+  panel.querySelector('#ov-loc-filter').addEventListener('change', e => {
+    overviewFilter.loc = e.target.value; renderOverview();
+  });
+
+  const tableEl = panel.querySelector('#shifts-table');
+  if(!filtered.length) {
+    tableEl.innerHTML = '<div class="empty">Смен пока нет. Нажмите «➕ Смена» чтобы добавить.</div>';
+    return;
+  }
+
+  const rowsHtml = filtered.map(sh => {
+    const c = calcShift(sh);
+    const op = operatorById(sh.operatorId);
+    const status = c.problems.length === 0
+      ? `<span class="badge badge-ok">✓</span>`
+      : `<span class="badge badge-bad">⚠</span>`;
+    let html = `
+      <tr class="shift-row" data-id="${sh.id}">
+        <td><strong>${fmtDate(sh.date)}</strong><br><span style="font-size:11px;color:var(--dim)">${escapeHtml(sh.loc)}</span></td>
+        <td>${op ? escapeHtml(op.name) : '<span style="color:var(--dim)">—</span>'}</td>
+        <td class="num">${c.payments}</td>
+        <td class="num">${fmtMoney(c.revenue)}</td>
+        <td>${status}</td>
+      </tr>`;
+    if(expandedShiftId === sh.id) {
+      html += `<tr class="detail-row"><td colspan="5">${shiftDetailHtml(sh, c)}</td></tr>`;
+    }
+    return html;
+  }).join('');
+
+  tableEl.innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr><th>Дата · точка</th><th>Оператор</th><th class="num">Касса</th><th class="num">Выручка</th><th></th></tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+  tableEl.querySelectorAll('.shift-row').forEach(r => {
+    r.addEventListener('click', () => {
+      const id = r.dataset.id;
+      expandedShiftId = (expandedShiftId === id) ? null : id;
+      renderOverview();
+    });
+  });
+}
+
+function shiftDetailHtml(sh, c) {
+  const op = operatorById(sh.operatorId);
+  const lines = [];
+  lines.push(`<b>${escapeHtml(sh.loc)} · ${fmtDate(sh.date)} · ${op ? escapeHtml(op.name) : 'оператор не указан'}</b>`);
+
+  lines.push('');
+  lines.push('<b>══ КАССА ══</b>');
+  lines.push(`Оплат: ${c.payments}  ·  Цена: ${fmtMoney(c.price)}  ·  Выручка: <b>${fmtMoney(c.revenue)}</b>`);
+
+  if(TIR_LOCS.includes(sh.loc)) {
+    lines.push('');
+    lines.push('<b>══ СЧЁТЧИКИ АВТОМАТОВ ══</b>');
+    const open = sh.counters?.open || [0,0,0,0];
+    const close = sh.counters?.close || [0,0,0,0];
+    MACHINES.forEach((m,i) => {
+      const o = Number(open[i])||0, cl = Number(close[i])||0;
+      const d = Math.max(0, cl - o);
+      lines.push(`  Автомат ${m}: ${o} → ${cl}  (+${d} игр)`);
+    });
+    lines.push(`Всего игр: <b>${c.games}</b> · Свои: ${c.ownGames} · Платных: <b>${c.paidGames}</b>`);
+  }
+
+  // Призы
+  const types = prizesForLoc(sh.loc);
+  if(types.length) {
+    lines.push('');
+    lines.push('<b>══ ПРИЗЫ / РАСХОД ══</b>');
+    types.forEach(pt => {
+      const issued = c.prizes[pt.id];
+      const start = (sh.startStock||{})[pt.id] || 0;
+      const inc = (sh.incoming||{})[pt.id] || 0;
+      const inv = (sh.inventory||{})[pt.id];
+      if(issued === null || issued === undefined) {
+        lines.push(`  ${pt.emoji} ${escapeHtml(pt.label)}: <span style="color:var(--dim)">факт не указан</span>`);
+      } else {
+        const incStr = inc > 0 ? ` + ${inc} приход` : '';
+        lines.push(`  ${pt.emoji} ${escapeHtml(pt.label)}: ${start}${incStr} − ${inv} = выдано <b>${issued}</b>  ·  себест: ${fmtMoney(issued * (pt.cost||0))}`);
+      }
+    });
+  }
+
+  // Сверка
+  lines.push('');
+  lines.push('<b>══ СВЕРКА ══</b>');
+  if(TIR_LOCS.includes(sh.loc)) {
+    lines.push(`Касса: <b>${c.payments}</b>  ·  Платных игр: <b>${c.paidGames}</b>  ·  Призов: <b>${c.prizesTotal}</b>`);
+  } else {
+    lines.push(`Касса: <b>${c.payments}</b>  ·  Призов: <b>${c.prizesTotal}</b>`);
+  }
+  lines.push(`Прибыль: <b style="color:var(--green)">${fmtMoney(c.profit)}</b>  (выручка ${fmtMoney(c.revenue)} − себестоимость ${fmtMoney(c.cost)})`);
+
+  if(c.problems.length) {
+    lines.push('');
+    lines.push('<b style="color:var(--red)">══ ПРОБЛЕМЫ ══</b>');
+    c.problems.forEach(p => lines.push(`  ${p}`));
+  } else {
+    lines.push('');
+    lines.push('<span style="color:var(--green)">✓ Расхождений нет</span>');
+  }
+
+  // Кнопки действий
+  lines.push('');
+  lines.push(`<button class="btn btn-sm btn-sec" onclick="editShift('${sh.id}')">✏ Редактировать</button>  <button class="btn btn-sm" style="background:var(--red);color:#fff" onclick="deleteShift('${sh.id}')">🗑 Удалить</button>`);
+
+  return lines.join('\n');
+}
+
+window.editShift = function(id) {
+  editingShiftId = id;
+  switchTab('new');
+};
+window.deleteShift = function(id) {
+  if(!confirm('Удалить эту смену? Это действие нельзя отменить.')) return;
+  state.shifts = state.shifts.filter(s => s.id !== id);
+  saveState();
+  expandedShiftId = null;
+  showToast('Смена удалена');
+  render();
+};
+
+// ══════════════════════════════════════════════════════════
+// НОВАЯ / РЕДАКТИРОВАНИЕ СМЕНЫ
+// ══════════════════════════════════════════════════════════
+let newShiftDraft = null; // {date, loc, operatorId, payments, ownGames, counters, inventory, incoming, note}
+
+function initShiftDraft() {
+  if(editingShiftId) {
+    const ex = state.shifts.find(s => s.id === editingShiftId);
+    if(ex) {
+      newShiftDraft = JSON.parse(JSON.stringify(ex));
+      return;
+    }
+  }
+  newShiftDraft = {
+    date: todayKey(),
+    loc: LOCS[0],
+    operatorId: state.settings.operators[0]?.id || '',
+    payments: '',
+    ownGames: '',
+    counters: { open: [0,0,0,0], close: ['','','',''] },
+    incoming: {},
+    inventory: {},
+    note: ''
+  };
+  // подставим стартовые остатки текущего склада точки и утренние счётчики
+  refreshDraftStartStockAndCounters();
+}
+
+function refreshDraftStartStockAndCounters() {
+  if(!newShiftDraft) return;
+  const loc = newShiftDraft.loc;
+  // Стартовый склад = текущие остатки точки
+  newShiftDraft.startStock = {...(state.locStocks[loc] || {})};
+  // Утренние счётчики Тира = последние close из предыдущей смены этой точки
+  if(TIR_LOCS.includes(loc)) {
+    const prev = [...state.shifts]
+      .filter(s => s.loc === loc && (!editingShiftId || s.id !== editingShiftId))
+      .sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id))[0];
+    if(prev && prev.counters?.close) {
+      newShiftDraft.counters.open = prev.counters.close.map(v => Number(v) || 0);
+    }
+  }
+}
+
+function renderNewShift() {
+  const panel = document.getElementById('tab-new');
+  if(!newShiftDraft) initShiftDraft();
+
+  const d = newShiftDraft;
+  const isTir = TIR_LOCS.includes(d.loc);
+  const types = prizesForLoc(d.loc);
+
+  panel.innerHTML = `
+    <div class="card">
+      <h4>${editingShiftId ? '✏ Редактирование смены' : '➕ Новая смена'}</h4>
+
+      <div class="f-grid-2">
+        <div class="f-row">
+          <label>Дата</label>
+          <input type="date" class="f-input" id="ns-date" value="${d.date}">
+        </div>
+        <div class="f-row">
+          <label>Точка</label>
+          <select class="f-select" id="ns-loc">
+            ${LOCS.map(l => `<option value="${l}" ${d.loc===l?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <label>Оператор</label>
+        <select class="f-select" id="ns-op">
+          ${state.settings.operators.map(o => `<option value="${o.id}" ${d.operatorId===o.id?'selected':''}>${escapeHtml(o.name)} · ${o.percent||0}%</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>💳 Касса</h4>
+      <div class="f-grid-2">
+        <div class="f-row">
+          <label>Оплат через KitPos</label>
+          <input type="number" min="0" class="f-input num" id="ns-pay" placeholder="0" value="${d.payments}">
+        </div>
+        <div class="f-row">
+          <label>Цена игры</label>
+          <input type="text" class="f-input num" value="${fmtMoney(priceFor(d.loc))}" disabled>
+        </div>
+      </div>
+    </div>
+
+    ${isTir ? renderCountersBlock(d) : ''}
+    ${(d.loc === 'Шарики') ? renderBallsOwnBlock(d) : ''}
+
+    <div class="card">
+      <h4>📦 Приход на точку за смену</h4>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Если за смену был приход товара со склада — введи здесь. Если не было — оставь нули.</div>
+      ${types.map(pt => `
+        <div class="f-row">
+          <label>${pt.emoji} ${escapeHtml(pt.label)} (приход)</label>
+          <input type="number" min="0" class="f-input num" data-incoming="${pt.id}" placeholder="0" value="${d.incoming?.[pt.id] || ''}">
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <h4>📋 Остатки на конец смены (физический подсчёт)</h4>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Введи фактическое количество товара которое лежит на витрине / в коробке / на стенде в конце смены.</div>
+      ${types.map(pt => {
+        const start = d.startStock?.[pt.id] || 0;
+        const inc = d.incoming?.[pt.id] || 0;
+        return `
+          <div class="f-row">
+            <label>${pt.emoji} ${escapeHtml(pt.label)} (остаток)</label>
+            <input type="number" min="0" class="f-input num" data-inv="${pt.id}" placeholder="0" value="${d.inventory?.[pt.id] ?? ''}">
+            <div style="font-size:11px;color:var(--dim);margin-top:4px">было ${start}${Number(inc)>0?` + ${inc} приход`:''} = доступно ${start+Number(inc||0)}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <div class="card">
+      <h4>📝 Заметка (необязательно)</h4>
+      <div class="f-row">
+        <textarea class="f-input" id="ns-note" rows="2" placeholder="что-то особенное на смене">${escapeHtml(d.note || '')}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-block" id="ns-save">💾 ${editingShiftId ? 'Сохранить изменения' : 'Сохранить смену'}</button>
+      ${editingShiftId ? '<button class="btn btn-sec" id="ns-cancel">Отмена</button>' : ''}
+    </div>
+  `;
+
+  // обработчики
+  panel.querySelector('#ns-date').addEventListener('change', e => { d.date = e.target.value; });
+  panel.querySelector('#ns-loc').addEventListener('change', e => {
+    d.loc = e.target.value;
+    refreshDraftStartStockAndCounters();
+    renderNewShift();
+  });
+  panel.querySelector('#ns-op').addEventListener('change', e => { d.operatorId = e.target.value; });
+  panel.querySelector('#ns-pay').addEventListener('input', e => { d.payments = e.target.value; });
+  const ownEl = panel.querySelector('#ns-own');
+  if(ownEl) ownEl.addEventListener('input', e => { d.ownGames = e.target.value; });
+
+  panel.querySelectorAll('[data-cs-open]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = Number(e.target.dataset.csOpen);
+      d.counters.open[i] = e.target.value === '' ? 0 : Number(e.target.value);
+    });
+  });
+  panel.querySelectorAll('[data-cs-close]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = Number(e.target.dataset.csClose);
+      d.counters.close[i] = e.target.value === '' ? '' : Number(e.target.value);
+    });
+  });
+  panel.querySelectorAll('[data-incoming]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      d.incoming = d.incoming || {};
+      const v = e.target.value;
+      d.incoming[e.target.dataset.incoming] = v === '' ? 0 : Number(v);
+    });
+  });
+  panel.querySelectorAll('[data-inv]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      d.inventory = d.inventory || {};
+      const v = e.target.value;
+      d.inventory[e.target.dataset.inv] = v === '' ? null : Number(v);
+    });
+  });
+  panel.querySelector('#ns-note').addEventListener('input', e => { d.note = e.target.value; });
+
+  panel.querySelector('#ns-save').addEventListener('click', saveShift);
+  const cancelBtn = panel.querySelector('#ns-cancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => {
+    editingShiftId = null;
+    newShiftDraft = null;
+    switchTab('overview');
+  });
+}
+
+function renderCountersBlock(d) {
+  return `
+    <div class="card">
+      <h4>🎯 Счётчики автоматов</h4>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Утренние подставлены из закрытия предыдущей смены — поправь если не совпадает.</div>
+      <div class="ctr-grid">
+        ${MACHINES.map((m, i) => `
+          <div class="ctr-row">
+            <div class="ctr-name">Автомат ${m}</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <input type="number" min="0" class="ctr-input" data-cs-open="${i}" value="${d.counters?.open?.[i] ?? 0}" placeholder="утром">
+              <span style="color:var(--dim);font-size:11px">→</span>
+              <input type="number" min="0" class="ctr-input" data-cs-close="${i}" value="${d.counters?.close?.[i] ?? ''}" placeholder="вечером">
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="f-row" style="margin-top:10px">
+        <label>🎮 Своих игр (пристрелка/тест)</label>
+        <input type="number" min="0" class="f-input num" id="ns-own" placeholder="0" value="${d.ownGames}">
+      </div>
+    </div>
+  `;
+}
+
+function renderBallsOwnBlock(d) {
+  return `
+    <div class="card">
+      <h4>🎮 Своих игр на Шариках</h4>
+      <div class="f-row">
+        <label>Своих игр (10 шаров каждая)</label>
+        <input type="number" min="0" class="f-input num" id="ns-own" placeholder="0" value="${d.ownGames}">
+      </div>
+    </div>
+  `;
+}
+
+function saveShift() {
+  const d = newShiftDraft;
+  if(!d.date) { showToast('Введите дату'); return; }
+  if(!d.loc) { showToast('Выберите точку'); return; }
+  if(!d.operatorId) { showToast('Выберите оператора'); return; }
+  if(d.payments === '' || isNaN(Number(d.payments))) { showToast('Введите количество оплат'); return; }
+  // Проверим что инвентаризация введена хотя бы для одной позиции
+  const types = prizesForLoc(d.loc);
+  const anyInv = types.some(pt => d.inventory[pt.id] !== null && d.inventory[pt.id] !== undefined);
+  if(!anyInv) {
+    if(!confirm('Остатки на конец смены не введены ни для одной позиции. Сохранить всё равно?')) return;
+  }
+
+  // Нормализуем
+  d.payments = Number(d.payments) || 0;
+  d.ownGames = Number(d.ownGames) || 0;
+  if(d.counters) {
+    d.counters.open = (d.counters.open || []).map(v => Number(v) || 0);
+    d.counters.close = (d.counters.close || []).map(v => v === '' ? 0 : (Number(v) || 0));
+  }
+  Object.keys(d.inventory || {}).forEach(k => {
+    if(d.inventory[k] === null || d.inventory[k] === undefined || d.inventory[k] === '') delete d.inventory[k];
+    else d.inventory[k] = Number(d.inventory[k]) || 0;
+  });
+  Object.keys(d.incoming || {}).forEach(k => {
+    if(!d.incoming[k]) delete d.incoming[k];
+    else d.incoming[k] = Number(d.incoming[k]) || 0;
+  });
+
+  if(editingShiftId) {
+    // Обновляем существующую
+    const idx = state.shifts.findIndex(s => s.id === editingShiftId);
+    if(idx >= 0) {
+      d.id = editingShiftId;
+      d.updatedAt = Date.now();
+      state.shifts[idx] = d;
+    }
+    editingShiftId = null;
+    showToast('✓ Смена обновлена');
+  } else {
+    // Новая смена
+    d.id = uid();
+    d.createdAt = Date.now();
+    d.updatedAt = d.createdAt;
+    state.shifts.push(d);
+    // Обновим текущий склад точки: остатки = факт инвентаризации
+    // (приход и расход уже в нашем учёте, факт = новый baseline)
+    types.forEach(pt => {
+      if(d.inventory[pt.id] !== undefined) {
+        if(!state.locStocks[d.loc]) state.locStocks[d.loc] = {};
+        state.locStocks[d.loc][pt.id] = d.inventory[pt.id];
+      }
+    });
+    showToast('✓ Смена сохранена');
+  }
+  saveState();
+  newShiftDraft = null;
+  switchTab('overview');
+}
+
+// ══════════════════════════════════════════════════════════
+// СКЛАД
+// ══════════════════════════════════════════════════════════
+let stockView = 'main'; // 'main' | 'Тир 1' | etc
+
+function renderStock() {
+  const panel = document.getElementById('tab-stock');
+  panel.innerHTML = `
+    <div class="card">
+      <div class="day-sw" id="stock-sw">
+        <button data-v="main" class="${stockView==='main'?'active':''}">🏪 Главный</button>
+        ${LOCS.map(l => `<button data-v="${l}" class="${stockView===l?'active':''}">${l}</button>`).join('')}
+      </div>
+    </div>
+    ${stockView === 'main' ? renderMainStock() : renderLocStock(stockView)}
+    ${stockView !== 'main' ? renderTransferUI(stockView) : ''}
+    ${renderTransferHistory()}
+  `;
+
+  panel.querySelectorAll('#stock-sw button').forEach(b => {
+    b.addEventListener('click', () => { stockView = b.dataset.v; renderStock(); });
+  });
+
+  // Кнопки оприходования / перемещения
+  const addMainBtn = panel.querySelector('#add-main');
+  if(addMainBtn) addMainBtn.addEventListener('click', addMainStockModal);
+  const transBtn = panel.querySelector('#do-transfer');
+  if(transBtn) transBtn.addEventListener('click', transferModal);
+}
+
+function renderMainStock() {
+  const types = state.settings.prizeTypes;
+  return `
+    <div class="card">
+      <h4>🏪 Главный склад</h4>
+      <div class="stock-grid">
+        ${types.map(pt => `
+          <div class="stock-cell">
+            <div class="sc-emoji">${pt.emoji}</div>
+            <div class="sc-val">${state.mainStock[pt.id] || 0}</div>
+            <div class="sc-lbl">${escapeHtml(pt.label)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-block" id="add-main" style="margin-top:10px">📥 Оприходовать товар</button>
+    </div>
+  `;
+}
+
+function renderLocStock(loc) {
+  const types = prizesForLoc(loc);
+  return `
+    <div class="card">
+      <h4>📦 Склад точки · ${escapeHtml(loc)}</h4>
+      <div class="stock-grid">
+        ${types.map(pt => `
+          <div class="stock-cell">
+            <div class="sc-emoji">${pt.emoji}</div>
+            <div class="sc-val">${(state.locStocks[loc] || {})[pt.id] || 0}</div>
+            <div class="sc-lbl">${escapeHtml(pt.label)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:8px">Эти остатки автоматически обновляются после закрытия смены (по введённому факту). Перемещение со склада увеличивает их.</div>
+    </div>
+  `;
+}
+
+function renderTransferUI(loc) {
+  return `
+    <div class="card">
+      <h4>🔄 Перемещение с главного склада → ${escapeHtml(loc)}</h4>
+      <button class="btn btn-block" id="do-transfer">➡ Сделать перемещение</button>
+    </div>
+  `;
+}
+
+function renderTransferHistory() {
+  const list = [...state.transfers].sort((a,b) => (b.date+b.id).localeCompare(a.date+a.id)).slice(0, 20);
+  if(!list.length) return '';
+  const types = state.settings.prizeTypes;
+  return `
+    <div class="card">
+      <h4>📜 История перемещений и приходов (последние 20)</h4>
+      <table class="tbl">
+        <thead><tr><th>Дата</th><th>Куда</th><th>Что</th></tr></thead>
+        <tbody>
+          ${list.map(t => {
+            const items = Object.entries(t.items || {})
+              .filter(([,v]) => v > 0)
+              .map(([k,v]) => {
+                const pt = state.settings.prizeTypes.find(p => p.id === k);
+                return `${pt?.emoji || ''} +${v}`;
+              }).join(' · ');
+            return `<tr>
+              <td>${fmtDate(t.date)}</td>
+              <td>${t.from === 'main' ? '🏪 Главный → ' + escapeHtml(t.to) : '📥 Приход'}</td>
+              <td style="font-size:12px">${items}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function addMainStockModal() {
+  const types = state.settings.prizeTypes;
+  openModal(`
+    <div class="modal-h"><h3>📥 Оприходовать на главный склад</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="f-row">
+      <label>Дата</label>
+      <input type="date" class="f-input" id="ms-date" value="${todayKey()}">
+    </div>
+    ${types.map(pt => `
+      <div class="f-row">
+        <label>${pt.emoji} ${escapeHtml(pt.label)}</label>
+        <input type="number" min="0" class="f-input num" data-add="${pt.id}" placeholder="0">
+      </div>
+    `).join('')}
+    <button class="btn btn-block" onclick="saveMainStockAdd()">💾 Сохранить приход</button>
+  `);
+}
+window.addMainStockModal = addMainStockModal;
+
+window.saveMainStockAdd = function() {
+  const date = document.getElementById('ms-date').value || todayKey();
+  const items = {};
+  document.querySelectorAll('[data-add]').forEach(inp => {
+    const v = Number(inp.value) || 0;
+    if(v > 0) items[inp.dataset.add] = v;
+  });
+  if(!Object.keys(items).length) { showToast('Введите хотя бы одну позицию'); return; }
+  // Зачисляем
+  Object.entries(items).forEach(([k,v]) => {
+    state.mainStock[k] = (state.mainStock[k] || 0) + v;
+  });
+  // Запись в историю
+  state.transfers.push({
+    id: uid(), date, from: 'external', to: 'main', items, createdAt: Date.now()
+  });
+  saveState();
+  closeModal();
+  showToast('✓ Приход на главный склад записан');
+  renderStock();
+};
+
+function transferModal() {
+  const loc = stockView;
+  const types = prizesForLoc(loc);
+  openModal(`
+    <div class="modal-h"><h3>🔄 Главный → ${escapeHtml(loc)}</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="f-row">
+      <label>Дата</label>
+      <input type="date" class="f-input" id="tr-date" value="${todayKey()}">
+    </div>
+    ${types.map(pt => {
+      const main = state.mainStock[pt.id] || 0;
+      return `
+        <div class="f-row">
+          <label>${pt.emoji} ${escapeHtml(pt.label)} <span style="color:var(--dim);font-weight:500">(на главном: ${main})</span></label>
+          <input type="number" min="0" max="${main}" class="f-input num" data-tr="${pt.id}" placeholder="0">
+        </div>
+      `;
+    }).join('')}
+    <button class="btn btn-block" onclick="saveTransfer('${loc.replace(/'/g,"\\'")}')">➡ Переместить</button>
+  `);
+}
+window.transferModal = transferModal;
+
+window.saveTransfer = function(loc) {
+  const date = document.getElementById('tr-date').value || todayKey();
+  const items = {};
+  let ok = true;
+  document.querySelectorAll('[data-tr]').forEach(inp => {
+    const v = Number(inp.value) || 0;
+    if(v > 0) {
+      const main = state.mainStock[inp.dataset.tr] || 0;
+      if(v > main) { showToast('На главном складе недостаточно ' + inp.dataset.tr); ok = false; }
+      items[inp.dataset.tr] = v;
+    }
+  });
+  if(!ok) return;
+  if(!Object.keys(items).length) { showToast('Введите хотя бы одну позицию'); return; }
+  // Списываем с главного и зачисляем на точку
+  Object.entries(items).forEach(([k,v]) => {
+    state.mainStock[k] = (state.mainStock[k] || 0) - v;
+    if(!state.locStocks[loc]) state.locStocks[loc] = {};
+    state.locStocks[loc][k] = (state.locStocks[loc][k] || 0) + v;
+  });
+  state.transfers.push({
+    id: uid(), date, from: 'main', to: loc, items, createdAt: Date.now()
+  });
+  saveState();
+  closeModal();
+  showToast('✓ Перемещение выполнено');
+  renderStock();
+};
+
+// ══════════════════════════════════════════════════════════
+// ЗАРПЛАТЫ
+// ══════════════════════════════════════════════════════════
+function renderSalary() {
+  const panel = document.getElementById('tab-salary');
+
+  // Период
+  let shifts = [];
+  if(salaryRange.mode === 'month' && salaryRange.month) {
+    shifts = state.shifts.filter(s => s.date.startsWith(salaryRange.month));
+  } else if(salaryRange.mode === 'range' && salaryRange.from && salaryRange.to) {
+    shifts = state.shifts.filter(s => s.date >= salaryRange.from && s.date <= salaryRange.to);
+  } else if(salaryRange.mode === 'all') {
+    shifts = state.shifts;
+  }
+
+  // Группировка по оператору
+  const byOp = {};
+  shifts.forEach(s => {
+    const opId = s.operatorId || 'none';
+    if(!byOp[opId]) byOp[opId] = { shifts: 0, revenue: 0, list: [] };
+    const c = calcShift(s);
+    byOp[opId].shifts++;
+    byOp[opId].revenue += c.revenue;
+    byOp[opId].list.push({ s, c });
+  });
+
+  const monthOptions = Array.from(new Set(state.shifts.map(s => s.date.slice(0,7)))).sort().reverse();
+  if(!monthOptions.includes(salaryRange.month)) monthOptions.unshift(salaryRange.month);
+
+  panel.innerHTML = `
+    <div class="card">
+      <h4>💰 Зарплата операторов</h4>
+      <div class="day-sw">
+        <button class="${salaryRange.mode==='month'?'active':''}" data-m="month">Месяц</button>
+        <button class="${salaryRange.mode==='range'?'active':''}" data-m="range">Период</button>
+        <button class="${salaryRange.mode==='all'?'active':''}" data-m="all">Всё</button>
+      </div>
+      ${salaryRange.mode === 'month' ? `
+        <div class="f-row">
+          <label>Месяц</label>
+          <select class="f-select" id="sal-month">
+            ${monthOptions.map(m => `<option value="${m}" ${salaryRange.month===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+      ` : salaryRange.mode === 'range' ? `
+        <div class="f-grid-2">
+          <div class="f-row"><label>С</label><input type="date" class="f-input" id="sal-from" value="${salaryRange.from}"></div>
+          <div class="f-row"><label>По</label><input type="date" class="f-input" id="sal-to" value="${salaryRange.to}"></div>
+        </div>
+      ` : ''}
+    </div>
+
+    ${Object.keys(byOp).length === 0 ? '<div class="card"><div class="empty">За выбранный период смен нет</div></div>' : ''}
+
+    ${state.settings.operators.map(op => {
+      const data = byOp[op.id];
+      if(!data) return '';
+      const salary = data.revenue * (Number(op.percent) || 0) / 100;
+      return `
+        <div class="card">
+          <h4>${escapeHtml(op.name)} · ${op.percent || 0}%</h4>
+          <div class="f-grid-2">
+            <div style="background:var(--bg);padding:10px;border-radius:8px">
+              <div style="font-size:11px;color:var(--text2);font-weight:600">Смен</div>
+              <div style="font-size:20px;font-weight:700">${data.shifts}</div>
+            </div>
+            <div style="background:var(--gold-bg);padding:10px;border-radius:8px">
+              <div style="font-size:11px;color:var(--text2);font-weight:600">Выручка</div>
+              <div style="font-size:20px;font-weight:700;color:var(--gold)">${fmtMoney(data.revenue)}</div>
+            </div>
+          </div>
+          <div style="background:var(--green-bg);padding:14px;border-radius:8px;margin-top:10px;text-align:center">
+            <div style="font-size:12px;color:var(--text2);font-weight:600">К выплате</div>
+            <div style="font-size:28px;font-weight:700;color:var(--green)">${fmtMoney(salary)}</div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  panel.querySelectorAll('.day-sw button').forEach(b => {
+    b.addEventListener('click', () => {
+      salaryRange.mode = b.dataset.m;
+      if(salaryRange.mode === 'range' && !salaryRange.from) {
+        const today = new Date();
+        const monthAgo = new Date(today.getTime() - 30*24*60*60*1000);
+        salaryRange.from = monthAgo.toISOString().slice(0,10);
+        salaryRange.to = todayKey();
+      }
+      renderSalary();
+    });
+  });
+  const sm = panel.querySelector('#sal-month');
+  if(sm) sm.addEventListener('change', e => { salaryRange.month = e.target.value; renderSalary(); });
+  const sf = panel.querySelector('#sal-from');
+  const st = panel.querySelector('#sal-to');
+  if(sf) sf.addEventListener('change', e => { salaryRange.from = e.target.value; renderSalary(); });
+  if(st) st.addEventListener('change', e => { salaryRange.to = e.target.value; renderSalary(); });
+}
+
+// ══════════════════════════════════════════════════════════
+// НАСТРОЙКИ
+// ══════════════════════════════════════════════════════════
+function renderSettings() {
+  const panel = document.getElementById('tab-settings');
+  panel.innerHTML = `
+    <div class="card">
+      <h4>👥 Операторы</h4>
+      ${state.settings.operators.map(op => `
+        <div class="list-row">
+          <div>
+            <div class="lr-name">${escapeHtml(op.name)}</div>
+            <div class="lr-meta">${op.percent || 0}% от выручки</div>
+          </div>
+          <button class="btn btn-sm btn-sec" onclick="editOperator('${op.id}')">✏</button>
+          <button class="lr-x" onclick="deleteOperator('${op.id}')">×</button>
+        </div>
+      `).join('')}
+      <button class="btn btn-block btn-sec" onclick="editOperator('')" style="margin-top:8px">➕ Добавить оператора</button>
+    </div>
+
+    <div class="card">
+      <h4>💸 Цены игр</h4>
+      ${LOCS.map(loc => `
+        <div class="f-row">
+          <label>${escapeHtml(loc)}</label>
+          <input type="number" min="0" class="f-input num" data-price="${loc}" value="${state.settings.prices[loc] || 0}">
+        </div>
+      `).join('')}
+      <button class="btn btn-block" onclick="savePrices()">💾 Сохранить цены</button>
+    </div>
+
+    <div class="card">
+      <h4>🎁 Типы призов</h4>
+      ${state.settings.prizeTypes.map(pt => `
+        <div class="list-row">
+          <div>
+            <div class="lr-name">${pt.emoji} ${escapeHtml(pt.label)}</div>
+            <div class="lr-meta">Себест: ${fmtMoney(pt.cost)} · ${(pt.locs||[]).join(', ')}</div>
+          </div>
+          <button class="btn btn-sm btn-sec" onclick="editPrize('${pt.id}')">✏</button>
+          <button class="lr-x" onclick="deletePrize('${pt.id}')">×</button>
+        </div>
+      `).join('')}
+      <button class="btn btn-block btn-sec" onclick="editPrize('')" style="margin-top:8px">➕ Добавить тип приза</button>
+    </div>
+
+    <div class="card">
+      <h4>💾 Резервная копия</h4>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">
+        Все данные хранятся локально в этом браузере. Делай копию регулярно — сохраняй файл в Telegram «избранное» или Google Drive.
+        При переустановке браузера / смене телефона восстанови из копии.
+      </div>
+      <div class="f-grid-2">
+        <button class="btn" onclick="exportBackup()">📥 Скачать копию</button>
+        <button class="btn btn-sec" onclick="importBackup()">📤 Восстановить</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+
+    <div class="card" style="border:1.5px solid var(--red)">
+      <h4 style="color:var(--red)">⚠ Опасные действия</h4>
+      <button class="btn btn-red btn-block" onclick="resetAll()">🗑 Полный сброс данных</button>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px">Удалит все смены, склад, операторов. Делай копию перед сбросом.</div>
+    </div>
+  `;
+}
+
+// Операторы
+window.editOperator = function(id) {
+  const op = id ? state.settings.operators.find(o => o.id === id) : { id: '', name: '', percent: 10 };
+  if(!op) return;
+  openModal(`
+    <div class="modal-h"><h3>${id ? '✏ Редактировать оператора' : '➕ Новый оператор'}</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="f-row">
+      <label>Имя</label>
+      <input type="text" class="f-input" id="op-name" value="${escapeHtml(op.name)}" placeholder="Ваня">
+    </div>
+    <div class="f-row">
+      <label>Процент от выручки (%)</label>
+      <input type="number" min="0" max="100" class="f-input num" id="op-pct" value="${op.percent || 0}">
+    </div>
+    <button class="btn btn-block" onclick="saveOperator('${id}')">💾 Сохранить</button>
+  `);
+};
+
+window.saveOperator = function(id) {
+  const name = document.getElementById('op-name').value.trim();
+  const pct = Number(document.getElementById('op-pct').value) || 0;
+  if(!name) { showToast('Введите имя'); return; }
+  if(id) {
+    const op = state.settings.operators.find(o => o.id === id);
+    if(op) { op.name = name; op.percent = pct; }
+  } else {
+    state.settings.operators.push({ id: uid(), name, percent: pct });
+  }
+  saveState();
+  closeModal();
+  showToast('✓ Сохранено');
+  render();
+};
+
+window.deleteOperator = function(id) {
+  if(!confirm('Удалить оператора? Прошлые смены с ним останутся в журнале.')) return;
+  state.settings.operators = state.settings.operators.filter(o => o.id !== id);
+  saveState();
+  render();
+};
+
+// Цены
+window.savePrices = function() {
+  document.querySelectorAll('[data-price]').forEach(inp => {
+    state.settings.prices[inp.dataset.price] = Number(inp.value) || 0;
+  });
+  saveState();
+  showToast('✓ Цены сохранены');
+};
+
+// Призы
+window.editPrize = function(id) {
+  const pt = id ? state.settings.prizeTypes.find(p => p.id === id) : { id: '', emoji: '🎁', label: '', cost: 0, locs: [...LOCS] };
+  if(!pt) return;
+  openModal(`
+    <div class="modal-h"><h3>${id ? '✏ Тип приза' : '➕ Новый тип приза'}</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="f-grid-2">
+      <div class="f-row"><label>Эмодзи</label><input type="text" class="f-input" id="pt-emoji" value="${pt.emoji}" maxlength="3"></div>
+      <div class="f-row"><label>Себест. ₽</label><input type="number" min="0" step="0.01" class="f-input num" id="pt-cost" value="${pt.cost || 0}"></div>
+    </div>
+    <div class="f-row"><label>Название</label><input type="text" class="f-input" id="pt-label" value="${escapeHtml(pt.label)}" placeholder="Маленькая игрушка"></div>
+    <div class="f-row">
+      <label>На каких точках выдаётся</label>
+      ${LOCS.map(l => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;font-weight:500">
+          <input type="checkbox" data-pt-loc="${l}" ${(pt.locs||[]).includes(l)?'checked':''}> ${l}
+        </label>
+      `).join('')}
+    </div>
+    <button class="btn btn-block" onclick="savePrize('${id}')">💾 Сохранить</button>
+  `);
+};
+
+window.savePrize = function(id) {
+  const emoji = document.getElementById('pt-emoji').value || '🎁';
+  const label = document.getElementById('pt-label').value.trim();
+  const cost = Number(document.getElementById('pt-cost').value) || 0;
+  const locs = Array.from(document.querySelectorAll('[data-pt-loc]:checked')).map(c => c.dataset.ptLoc);
+  if(!label) { showToast('Введите название'); return; }
+  if(id) {
+    const pt = state.settings.prizeTypes.find(p => p.id === id);
+    if(pt) { pt.emoji = emoji; pt.label = label; pt.cost = cost; pt.locs = locs; }
+  } else {
+    state.settings.prizeTypes.push({ id: uid(), emoji, label, cost, locs });
+  }
+  saveState();
+  closeModal();
+  showToast('✓ Сохранено');
+  render();
+};
+
+window.deletePrize = function(id) {
+  if(!confirm('Удалить тип приза? Это не повлияет на прошлые смены.')) return;
+  state.settings.prizeTypes = state.settings.prizeTypes.filter(p => p.id !== id);
+  saveState();
+  render();
+};
+
+// Экспорт/импорт
+window.exportBackup = function() {
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `uchot_backup_${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ Резервная копия скачана');
+};
+
+window.importBackup = function() {
+  const inp = document.getElementById('import-file');
+  inp.value = '';
+  inp.onchange = (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if(!data.version) { showToast('Файл не похож на копию учёта'); return; }
+        if(!confirm('Восстановить из копии? Текущие данные будут заменены!')) return;
+        state = data;
+        saveState();
+        showToast('✓ Данные восстановлены');
+        render();
+      } catch(err) {
+        showToast('Ошибка чтения файла');
+      }
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+};
+
+window.resetAll = function() {
+  if(!confirm('Удалить ВСЕ данные? Сделай резервную копию перед сбросом.')) return;
+  if(!confirm('Точно? Это нельзя отменить.')) return;
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  saveState();
+  showToast('✓ Данные сброшены');
+  render();
+};
+
+// ══════════════════════════════════════════════════════════
+// СТАРТ
+// ══════════════════════════════════════════════════════════
+render();
+console.log('Учёт mini v1 загружен. Смен в базе:', state.shifts.length);
+</script>
+
+</body>
+</html>
